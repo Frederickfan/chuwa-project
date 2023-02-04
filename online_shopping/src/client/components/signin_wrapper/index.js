@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import PANEL_STATUS from "../constants";
+import {PANEL_STATUS} from "../constants";
 
 export default function SigninWrapper({setPanelStatus}) {
   return (
