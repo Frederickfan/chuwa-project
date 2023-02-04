@@ -1,22 +1,48 @@
 import { Modal } from "antd";
 import { CloseCircleOutlined } from "@ant-design/icons";
 import MyForm from "../form";
+import {PANEL_STATUS} from "../constants";
 
-export default function Authentication({visible, setVisible, panelStatus, setPanelStatus }) {
+export default function Authentication({
+      user, 
+      setUser,
+      visible, 
+      setVisible, 
+      panelStatus, 
+      setPanelStatus 
+  }) {
 
+    const titleHandler = (panelStatus) => {
+      if (panelStatus === PANEL_STATUS.SIGN_IN) {
+        return "Sign in to your account";
+      } else if (panelStatus === PANEL_STATUS.SIGN_UP) {
+        return "Sign up an account";
+      } else {
+        return "Update your password";
+      }
+    }
   return (
     <>
       <Modal
-        width={400}
-        bodyStyle={{ height: 500, backgroundColor:'white'}}
+        width={450}
+        bodyStyle={
+          panelStatus === PANEL_STATUS.UPDATE_PASSWORD 
+          ? {height: 200}
+          : {height: 300}
+        }
         closeIcon={<CloseCircleOutlined />}
-        title={"LOGIN"}
+        title={titleHandler(panelStatus)}
         visible={visible}
         footer={null}
         mask={false}
         onCancel={() => setVisible(false)}
       >
-        <MyForm panelStatus={panelStatus} setPanelStatus={setPanelStatus}></MyForm>
+        <MyForm 
+          user={user} 
+          setUser={setUser} 
+          panelStatus={panelStatus} 
+          setPanelStatus={setPanelStatus}
+        ></MyForm>
       </Modal>
     </>
   );

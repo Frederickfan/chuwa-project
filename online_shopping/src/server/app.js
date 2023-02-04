@@ -7,9 +7,17 @@ var logger = require("morgan");
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 
+// connect to database 
+const connectToMongoose = require('./database/connect');
+const customer = require('./database/model');
+connectToMongoose();
+
 var app = express();
 const { v4: uuidv4 } = require("uuid");
+const Customer = require('./database/model');
 const { appPackageJson } = require("../../config/paths");
+const { connect } = require("http2");
+const { query } = require("express");
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -24,34 +32,24 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 // mock database
-let customers = [
-  {
-    id: uuidv4(),
-    email: "fzm960206@gmail.com",
-    password: "fufu",
-    isLoggedIn: false,
-  },
-  {
-    id: uuidv4(),
-    email: "dxn1226@mit.edu",
-    password: "dxn",
-    isLoggedIn: false,
-  },
-  {
-    id: uuidv4(),
-    email: "fufu2460@nyu.edu",
-    password: "fufu",
-    isLoggedIn: false,
-  },
-];
+
 
 // 1. (GET) => return all users in the mock database
-app.get("/allCustomers", (_, res) => {
+app.get("/allCustomers", async(_, res) => {
+  const customersDatabase = await Customer.find({}); 
+  const customers = customersDatabase.map(({id, email, password, isLoggedIn})=>{
+    return {
+      id, 
+      email, 
+      password,
+      isLoggedIn,
+    };
+  })
   res.json(customers);
 });
 
 // 2. (POST) => pass content and isCompleted to the payload => add a user
-app.post("/customerSignUp", (req, res) => {
+app.post("/customerSignUp", async(req, res) => {
   console.log(req.body);
   if (!(req.body && req.body.email && req.body.password)) {
     console.log(404);
@@ -63,11 +61,9 @@ app.post("/customerSignUp", (req, res) => {
   }
 
   // check if the account already exists.
-  const customer = customers.find((customer) => {
-    return customer.email === req.body.email;
-  });
+  const customerFromDB = await Customer.findOne({email: req.body.email}).exec();
 
-  if (customer !== undefined) {
+  if (customerFromDB !== null) {
     console.log(400);
     res.status(400).json({
       error: "failed",
@@ -76,18 +72,37 @@ app.post("/customerSignUp", (req, res) => {
     return;
   }
 
-  customers = [...customers, { ...req.body, id: uuidv4(), isLoggedIn: false }];
-  console.log(customers);
-  res.json({
-    message: "New customer account signed up successfully",
-    status: "201",
+  const customer = new Customer({
+    id: uuidv4(),
+    email: req.body.email,
+    password: req.body.password,
+  })
+
+  const newCustomer = await customer.save();
+
+  if (newCustomer === customer) {
+    res.json({
+      message: "New customer account signed up successfully",
+      status: "201",
+      newCustomer: {
+        id: newCustomer.id,
+        email: newCustomer.email,
+        password: newCustomer.password, 
+        isLoggedIn: newCustomer.isLoggedIn,
+      }
+    });
+    return;
+  }
+
+  res.status('400').json({
+    message: 'Add todo failed',
   });
 });
 
 // 3. (PUT method) =>
 // verify if account exists? password match? =>
 // change isLoggedIn status to true.
-app.put("/customerSignIn", (req, res) => {
+app.put("/customerSignIn", async(req, res) => {
   if (!(req.body && req.body.email && req.body.password)) {
     res.status(404).json({
       error: "failed",
@@ -96,11 +111,10 @@ app.put("/customerSignIn", (req, res) => {
   }
 
   // check if the account already exists.
-  const customer = customers.find((customer) => {
-    return customer.email === req.body.email;
-  });
 
-  if (customer === undefined) {
+  const customerFromDB = await Customer.findOne({email: req.body.email});
+
+  if (customerFromDB === null) {
     res.status(400).json({
       error: "failed",
       message: "Account does not exist!",
@@ -108,15 +122,79 @@ app.put("/customerSignIn", (req, res) => {
   }
 
   // check if password match.
-  if (customer.password !== req.body.password) {
+  if (customerFromDB.password !== req.body.password) {
     res.status(400).json({
       error: "failed",
       message: "False password!",
     });
   }
 
-  customer.isLoggedIn = true;
+  const {modifiedCount} = await customerFromDB.updateOne({
+    isLoggedIn: true,
+  });
+
+  if (modifiedCount) {
+    res.status('200').json({
+      message: 'Successfully logged in!',
+      status: '200',
+      customer: {
+        id: customerFromDB.id, 
+        email: customerFromDB.email, 
+        password: customerFromDB.password, 
+        isLoggedIn: customerFromDB.isLoggedIn,
+      }
+    });
+    return; 
+  }
+
+  res.status('404').json({
+    message: 'update failed',
+  });
+  return; 
 });
+
+// 4. customerSignOut 
+app.put('/customerSignOut', async(req, res) => {
+  if (!(req.body && req.body.user)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const customerFromDB = await Customer.findOne({id: req.body.user.id}); 
+  const {modifiedCount} = await customerFromDB.updateOne({
+    isLoggedIn: false,
+  });
+
+  if (modifiedCount) {
+    res.status('200').json({
+      message: 'Successfully signed out!',
+      status: '200',
+    });
+    return; 
+  }
+})
+
+// 5 GET customers
+app.get('/customers/:id', async(req, res) => {
+  const customerFromDB = await Customer.findOne({id: req.params.id.slice(1)});
+  if (customerFromDB === null) {
+    res.json({
+      message: 'Not yet authenticated', 
+      status: '204',
+      userStatus: 'unauthenticated',
+    }); 
+    return; 
+  } else {
+    res.json({
+      message: 'later devlopement needed', 
+      status: '200',
+      userStatus: 'authenticated',
+    })
+  }
+})
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

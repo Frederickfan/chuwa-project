@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import PANEL_STATUS from "../constants";
+import {PANEL_STATUS} from "../constants";
 
 export default function SignupWrapper({setPanelStatus}) {
   return (
@@ -12,7 +12,9 @@ export default function SignupWrapper({setPanelStatus}) {
       >
         Sign in
       </Button>
-      <Button className="Forgot_Password_Button" type="text">
+      <Button className="Forgot_Password_Button" type="text" onClick={() => {
+        setPanelStatus(PANEL_STATUS.UPDATE_PASSWORD);
+      }}>
         Forgot_password?
       </Button>
     </div>
