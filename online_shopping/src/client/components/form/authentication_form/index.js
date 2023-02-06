@@ -1,8 +1,8 @@
-import { Button, Checkbox, Form, Input } from "antd";
+import { Button, Form, Input } from "antd";
 import { useState } from "react";
 import SigninWrapper from "../../signin_wrapper";
 import SignupWrapper from "../../signup_wrapper";
-import {PANEL_STATUS} from "../../constants";
+import { PANEL_STATUS } from "../../constants";
 import { ajaxConfigHelper } from "../../../helper";
 const { v4: uuidv4 } = require("uuid");
 
@@ -47,14 +47,15 @@ export default function AuthenticationForm({
     );
 
     const { message, status, customer } = await response.json();
-    alert(`Sign in staus:: ${message}, User login status: ${customer.isLoggedIn}`);
+    alert(
+      `Sign in staus:: ${message}, User login status: ${customer.isLoggedIn}`
+    );
 
     if (status === "200") {
       setUser(customer);
-      setPanelStatus(PANEL_STATUS.LOGGED_IN);
+      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
     }
   };
-
 
   const buttonSwitchHandler = (panelStatus) => {
     if (panelStatus === PANEL_STATUS.SIGN_IN) {
@@ -161,7 +162,13 @@ export default function AuthenticationForm({
           </Button>
         </Form.Item>
         {panelStatus === PANEL_STATUS.UPDATE_PASSWORD ? (
-          <div></div>
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            onClick={() => {setPanelStatus(PANEL_STATUS.SIGN_IN)}}
+          >
+            Back
+          </Button>
         ) : (
           authenWrapperSwitchHandler(panelStatus)
         )}

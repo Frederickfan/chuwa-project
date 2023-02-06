@@ -1,35 +1,41 @@
 import ProductsController from "./products_controller";
 import ProductsGallary from "./products_gallary";
 import CreateOrEditProduct from "./create_product";
-import { PRODUCT_STATUS } from "../constants";
-import { MAINPAGE_STATUS } from "../constants";
-import { useState } from "react";
+import { PANEL_STATUS } from "../constants";
 
-export default function MainPage() {
-  const [mainPageStatus, setMainPageStatus] = useState(
-    MAINPAGE_STATUS.MAIN_PAGE
-  );
-
-  const pageSwitchHelper = (mainPageStatus) => {
-    console.log(mainPageStatus);
-    if (mainPageStatus === MAINPAGE_STATUS.MAIN_PAGE) {
+export default function MainPage({
+  products,
+  setProducts,
+  panelStatus,
+  setPanelStatus,
+}) {
+  const pageSwitchHelper = (panelStatus) => {
+    if (panelStatus === PANEL_STATUS.MAIN_PAGE) {
       return (
         <>
           <ProductsController
-            mainPageStatus={mainPageStatus}
-            setMainPageStatus={setMainPageStatus}
+            panelStatus={panelStatus}
+            setPanelStatus={setPanelStatus}
           ></ProductsController>
-          <ProductsGallary></ProductsGallary>
+          <ProductsGallary
+            products={products}
+            panelStatus={panelStatus}
+            setPanelStatus={setPanelStatus}
+          ></ProductsGallary>
         </>
       );
-    } else if (mainPageStatus === MAINPAGE_STATUS.CREATE_PRODUCT) {
+    } else {
       return (
         <>
-          <CreateOrEditProduct productStatus={PRODUCT_STATUS.CREATE_PRODUCT}></CreateOrEditProduct>
+          <CreateOrEditProduct
+            products={products}
+            panelStatus={panelStatus}
+            setPanelStatus={setPanelStatus}
+          ></CreateOrEditProduct>
         </>
       );
     }
   };
 
-  return pageSwitchHelper(mainPageStatus);
+  return pageSwitchHelper(panelStatus);
 }
