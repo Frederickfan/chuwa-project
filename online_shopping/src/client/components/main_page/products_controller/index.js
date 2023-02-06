@@ -1,7 +1,7 @@
 import { Select, Button } from "antd";
-import { MAINPAGE_STATUS } from "../../constants";
+import { PANEL_STATUS } from "../../constants";
 
-export default function ProductsController({setMainPageStatus}) {
+export default function ProductsController({setPanelStatus}) {
   const handleChange = (value) => {
     console.log(value); // { value: "lucy", key: "lucy", label: "Lucy (101)" }
   };
@@ -34,7 +34,7 @@ export default function ProductsController({setMainPageStatus}) {
           },
         ]}
       />
-      <Button onClick={() => setMainPageStatus(MAINPAGE_STATUS.CREATE_PRODUCT)}>Add Product</Button>
+      <Button onClick={() => setPanelStatus(PANEL_STATUS.CREATE_PRODUCT)}>Add Product</Button>
     </>
   );
 }
