@@ -2,19 +2,21 @@ import ProductCard from "../product_card";
 import "./index.css";
 
 export default function ProductList({
-    panelStatus, 
-    setPanelStatus, 
-    products, 
-    setProductID    
+  user,
+  panelStatus,
+  setPanelStatus,
+  products,
+  setProductID,
+  setEditId,
+  setProducts,
 }) {
   console.log(products);
   return (
     <div className="product_list">
-        {console.log('run map func here')}
-    {
-      products.map((product, index) => {
+      {products.map((product, index) => {
         return (
           <ProductCard
+            user={user}
             key={`${product.id}-${index}`}
             imgUrl={product.imgUrl}
             name={product.name}
@@ -24,9 +26,12 @@ export default function ProductList({
             createdAt={product.createdAt}
             updatedAt={product.updatedAt}
             id={product.id}
+            quantity={product.quantity}
             panelStatus={panelStatus}
             setPanelStatus={setPanelStatus}
             setProductID={setProductID}
+            setEditId={setEditId}
+            setProducts={setProducts}
           ></ProductCard>
         );
       })}

@@ -92,6 +92,7 @@ app.post("/customerSignUp", async (req, res) => {
         email: newCustomer.email,
         password: newCustomer.password,
         isLoggedIn: newCustomer.isLoggedIn,
+        isAdmin: newCustomer.isAdmin,
       },
     });
     return;
@@ -143,6 +144,7 @@ app.put("/customerSignIn", async (req, res) => {
       customer: {
         id: customerFromDB.id,
         isLoggedIn: customerFromDB.isLoggedIn,
+        isAdmin: customerFromDB.isAdmin,
       },
     });
     return;
@@ -242,21 +244,78 @@ app.post("/addProduct", async (req, res) => {
 app.get("/getAllProducts", async (_, res) => {
   const productDatabase = await Product.find({});
   const products = productDatabase.map(
-    ({ id, name, detail, category, price, imgUrl, createdAt, updatedAt }) => {
+    ({ id, name, detail, category, price, imgUrl, createdAt, updatedAt, quantity }) => {
       return {
         id,
-        name, 
+        name,
         detail,
-        category, 
-        price, 
-        imgUrl, 
-        createdAt, 
+        category,
+        price,
+        imgUrl,
+        createdAt,
         updatedAt,
+        quantity,
       };
     }
   );
-  res.json({status: "succeed", products: products});
+  res.json({ status: "succeed", products: products });
 });
+
+// 8 PUT edit a product with id
+app.put("/editProduct", async (req, res) => {
+  console.log(req.body);
+  if (!(req.body)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const productFromDB = await Product.findOne({ id: req.body.id });
+
+    const { modifiedCount } = await productFromDB.updateOne({
+      ...req.body,
+    });
+    if (modifiedCount) {
+      res.status(200).json({
+        message: 'update succeed', 
+        editStatus: 'succeed',
+      });
+      return; 
+    }
+    
+    res.status(500).json({
+      message: 'Internal Server Error', 
+      status: 'failed', 
+    })
+  });
+
+  // 9 DELETE a product with id. 
+  app.delete("/delProduct", async(req, res) => {
+    if (!(req.body && req.body.id)) {
+      res.status(404).json({
+        error: "failed",
+        message: "Input is not valid",
+      });
+      return;
+    }
+
+    const id = req.body.id; 
+    const {deletedCount} = await Product.deleteOne({id});
+    if (deletedCount) {
+      res.status(200).json({
+        message: 'delete succeed', 
+        status: "succeed",
+      })
+    } else {
+      res.status(404).json({
+        message: "delete failed",
+        status: "failed",
+      })
+    }
+
+  })
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

@@ -2,7 +2,8 @@ import ProductList from "../productList";
 import Pagination from "../pagination";
 import { useState } from "react";
 
-export default function ProductsGallary({ panelStatus, setPanelStatus, products }) {
+export default function ProductsGallary({
+    user, panelStatus, setPanelStatus, products, setEditId, setProducts }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage, setPostsPerPage] = useState(8);
 
@@ -14,9 +15,12 @@ export default function ProductsGallary({ panelStatus, setPanelStatus, products 
     <>
       <h1>Products Gallary</h1>
       <ProductList
+        user={user}
+        setEditId={setEditId}
         products={currentProducts}
         panelStatus={panelStatus}
         setPanelStatus={setPanelStatus}
+        setProducts={setProducts}
       ></ProductList>
       <Pagination
         totalPosts={products.length}

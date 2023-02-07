@@ -1,32 +1,84 @@
-import { Form, Input, InputNumber, Select, Button } from "antd";
+import { Form, Input, InputNumber, Select, Button, Image } from "antd";
 import { PANEL_STATUS } from "../../constants";
 import ImageUploader from "./imageUploader";
 import { useState } from "react";
 import { ajaxConfigHelper } from "../../../helper";
-const {v4: uuidv4} = require("uuid");
+const { v4: uuidv4 } = require("uuid");
 const { TextArea } = Input;
 
-const ProductControlForm = ({ panelStatus, setPanelStatus }) => {
-  const [imageURL, setImageURL] = useState("");
+const ProductControlForm = ({
+  panelStatus,
+  setPanelStatus,
+  editId,
+  setProducts,
+  products,
+}) => {
+  console.log(products);
+  const editingProduct = products.find((product) => product.id === editId);
+  const editingProductUrl = editingProduct ? editingProduct.imgUrl : "";
+  const [imageURL, setImageURL] = useState(
+    panelStatus === PANEL_STATUS.CREATE_PRODUCT ? "" : editingProductUrl
+  );
+  const [uploaded, setUploaded] = useState(false);
+  console.log(`image url is : ${imageURL}`);
+  console.log(`image url from edit product is ${editingProductUrl}`);
+
+  const initialValuesForEditing = editingProduct
+    ? {
+        name: editingProduct.name,
+        detail: editingProduct.detail,
+        category: editingProduct.category,
+        quantity: editingProduct.quantity,
+        price: editingProduct.price,
+      }
+    : {};
+  console.log(editingProduct);
 
   const addProductHandler = async (productDetails) => {
     const productID = uuidv4();
     const product = {
-      ...productDetails, 
+      ...productDetails,
       imgUrl: imageURL,
       id: productID,
-    }
+    };
     console.log(`New product added: ${JSON.stringify(product)}`);
 
-    const response = await fetch(
-      '/addProduct', 
-      ajaxConfigHelper(product)
-    )
+    const addResponse = await fetch("/addProduct", ajaxConfigHelper(product));
+    const productsResponse = await fetch("/getAllProducts");
+    const { productsStatus, products } = await productsResponse.json();
 
-    const {message, status} = await response.json(); 
-    alert(`New product status: ${message}, status code: ${status}`); 
+    const { message, status } = await addResponse.json();
+    alert(`New product status: ${message}, status code: ${status}`);
+    setProducts(products);
 
     setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+  };
+
+  const editProductHandler = async (productDetails) => {
+    const product = {
+      ...productDetails,
+      imgUrl: imageURL,
+      id: editId,
+    };
+    console.log(
+      `Product with id ${editId} forwarded to DB to update: ${JSON.stringify(
+        product
+      )}`
+    );
+
+    const editResponse = await fetch(
+      "/editProduct",
+      ajaxConfigHelper(product, "PUT")
+    );
+    const { message, editStatus } = await editResponse.json();
+    const productsResponse = await fetch("/getAllProducts");
+    const { productsStatus, products } = await productsResponse.json();
+
+    if (editStatus === "succeed") {
+      alert(message);
+      setProducts(products);
+      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+    }
   };
 
   return (
@@ -37,7 +89,12 @@ const ProductControlForm = ({ panelStatus, setPanelStatus }) => {
         <h1>Edit Product</h1>
       )}
       <Form
-        onFinish={addProductHandler}
+        initialValues={initialValuesForEditing}
+        onFinish={
+          panelStatus === PANEL_STATUS.CREATE_PRODUCT
+            ? addProductHandler
+            : editProductHandler
+        }
         labelCol={{
           span: 4,
         }}
@@ -49,15 +106,9 @@ const ProductControlForm = ({ panelStatus, setPanelStatus }) => {
           maxWidth: 600,
         }}
       >
-        {panelStatus === PANEL_STATUS.CREATE_PRODUCT ? (
-          <Form.Item label="Product Name" name="name">
-            <Input />
-          </Form.Item>
-        ) : (
-          <Form.Item label="Product ID" name="id">
-            <Input />
-          </Form.Item>
-        )}
+        <Form.Item label="Product Name" name="name">
+          <Input />
+        </Form.Item>
 
         <Form.Item label="Product Detail" name="detail">
           <TextArea rows={4} />
@@ -73,28 +124,56 @@ const ProductControlForm = ({ panelStatus, setPanelStatus }) => {
           </Select>
         </Form.Item>
         <Form.Item label="Quantity" name="quantity">
-          <InputNumber min={0} />
+          <InputNumber required={true} min={0} />
         </Form.Item>
         <Form.Item label="Price" name="price">
-          <InputNumber min={0} controls={false} />
+          <InputNumber required={true} min={0} controls={false} />
         </Form.Item>
 
-        <ImageUploader
-          imageURL={imageURL}
-          setImageURL={setImageURL}
-        ></ImageUploader>
+        <Form.Item label="Image URL" name="imgUrl">
+          <Input
+            defaultValue={
+              panelStatus === PANEL_STATUS.EDIT_PRODUCT
+                ? editingProduct.imgUrl
+                : ""
+            }
+            onChange={(e) => {
+              setUploaded(false);
+              setImageURL(e.target.value);
+            }}
+          ></Input>
+        </Form.Item>
+        <Button
+          onClick={(e) => {
+            console.log(imageURL);
+            setUploaded(true);
+          }}
+        >
+          Upload
+        </Button>
+        {uploaded ? (
+          <Image width={210} height={230} src={imageURL}></Image>
+        ) : (
+          <Image
+            width={210}
+            height={230}
+            src={
+              "https://st4.depositphotos.com/14953852/22772/v/450/depositphotos_227725184-stock-illustration-image-available-icon-flat-vector.jpg"
+            }
+          ></Image>
+        )}
         <Form.Item>
           <Button type="primary" htmlType="submit">
             {panelStatus === PANEL_STATUS.CREATE_PRODUCT
               ? "Add Product"
               : "Update Product"}
           </Button>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             htmlType="submit"
             onClick={() => setPanelStatus(PANEL_STATUS.MAIN_PAGE)}
           >
-              Back
+            Back
           </Button>
         </Form.Item>
       </Form>

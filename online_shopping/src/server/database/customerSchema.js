@@ -19,6 +19,10 @@ const customerSchema = new mongoose.Schema({
     id: {
         type: String, 
         required: true,
+    }, 
+    isAdmin: {
+        type: Boolean, 
+        default: false, 
     }
 },{
     timestamps: true, 
