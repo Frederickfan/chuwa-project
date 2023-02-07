@@ -27,7 +27,6 @@ export default function MainPage({
       return Number(b.price) - Number(a.price);
     });
   }
-  console.log(`sorted products here ${products}`);
 
   const pageSwitchHelper = (panelStatus) => {
     if (panelStatus === PANEL_STATUS.MAIN_PAGE) {

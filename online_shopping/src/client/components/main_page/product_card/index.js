@@ -6,8 +6,10 @@ import {
 import { Avatar, Card, Button, Modal, Row, Col } from "antd";
 import { PANEL_STATUS } from "../../constants";
 import React from "react";
+import { useState, useEffect } from "react";
 import "./index.css";
 import { ajaxConfigHelper } from "../../../helper";
+import PlusMinusControl from "./plus_minus_controller";
 const { Meta } = Card;
 
 export default function ProductCard({
@@ -26,7 +28,17 @@ export default function ProductCard({
   setEditId,
   setProducts,
 }) {
+  const localCount = JSON.parse(window.localStorage.getItem(`count_${id}`));
   const [visible, setVisible] = React.useState(false);
+  const [count, setCount] = useState(
+    localCount === null 
+    ? 0
+    : localCount 
+  );
+
+  useEffect(() => {
+    window.localStorage.setItem(`count_${id}`, JSON.stringify(count));
+  }, [count]);
 
   const showModal = () => {
     setVisible(true);
@@ -35,22 +47,28 @@ export default function ProductCard({
   const handleOk = async () => {
     setVisible(false);
     // Perform the delete operation here
-    const deleteResponse = await fetch("/delProduct",
-        ajaxConfigHelper({id}, "DELETE")
-    )
-    const {message, status} = await deleteResponse.json();
+    const deleteResponse = await fetch(
+      "/delProduct",
+      ajaxConfigHelper({ id }, "DELETE")
+    );
+    const { message, status } = await deleteResponse.json();
     const updatedProducts = await fetch("/getAllProducts");
-    const {products} = await updatedProducts.json();
+    const { products } = await updatedProducts.json();
 
     if (status === "succeed") {
-        alert(message);
-        setProducts(products);
-        setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+      alert(message);
+      setProducts(products);
+      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
     }
   };
 
   const handleCancel = () => {
     setVisible(false);
+  };
+
+  const addHandler = () => {
+    console.log("hahaah");
+    setCount((count) => count + 1);
   };
   return (
     <>
@@ -62,7 +80,15 @@ export default function ProductCard({
           <h4>{name}</h4>
           {quantity === "0" ? <div>Out of Stock</div> : <></>}
           <h4>${price.toLocaleString()}</h4>
-          <Button>Add</Button>
+
+          {count > 0 ? (
+            <PlusMinusControl
+              count={count}
+              setCount={setCount}
+            ></PlusMinusControl>
+          ) : (
+            <Button onClick={addHandler}>Add</Button>
+          )}
 
           {user.isAdmin ? (
             <Button

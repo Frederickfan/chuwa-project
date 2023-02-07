@@ -10,7 +10,7 @@ export default function ProductList({
   setEditId,
   setProducts,
 }) {
-  console.log(products);
+  console.log(`product list: ${products}`);
   return (
     <div className="product_list">
       {products.map((product, index) => {

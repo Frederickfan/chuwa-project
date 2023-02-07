@@ -1,6 +1,5 @@
 import { Form, Input, InputNumber, Select, Button, Image } from "antd";
 import { PANEL_STATUS } from "../../constants";
-import ImageUploader from "./imageUploader";
 import { useState } from "react";
 import { ajaxConfigHelper } from "../../../helper";
 const { v4: uuidv4 } = require("uuid");
@@ -13,15 +12,12 @@ const ProductControlForm = ({
   setProducts,
   products,
 }) => {
-  console.log(products);
   const editingProduct = products.find((product) => product.id === editId);
   const editingProductUrl = editingProduct ? editingProduct.imgUrl : "";
   const [imageURL, setImageURL] = useState(
     panelStatus === PANEL_STATUS.CREATE_PRODUCT ? "" : editingProductUrl
   );
   const [uploaded, setUploaded] = useState(false);
-  console.log(`image url is : ${imageURL}`);
-  console.log(`image url from edit product is ${editingProductUrl}`);
 
   const initialValuesForEditing = editingProduct
     ? {
@@ -32,7 +28,6 @@ const ProductControlForm = ({
         price: editingProduct.price,
       }
     : {};
-  console.log(editingProduct);
 
   const addProductHandler = async (productDetails) => {
     const productID = uuidv4();
@@ -41,7 +36,6 @@ const ProductControlForm = ({
       imgUrl: imageURL,
       id: productID,
     };
-    console.log(`New product added: ${JSON.stringify(product)}`);
 
     const addResponse = await fetch("/addProduct", ajaxConfigHelper(product));
     const productsResponse = await fetch("/getAllProducts");
@@ -60,11 +54,6 @@ const ProductControlForm = ({
       imgUrl: imageURL,
       id: editId,
     };
-    console.log(
-      `Product with id ${editId} forwarded to DB to update: ${JSON.stringify(
-        product
-      )}`
-    );
 
     const editResponse = await fetch(
       "/editProduct",
@@ -149,7 +138,7 @@ const ProductControlForm = ({
             setUploaded(true);
           }}
         >
-          Upload
+          Preview
         </Button>
         {uploaded ? (
           <Image width={210} height={230} src={imageURL}></Image>
