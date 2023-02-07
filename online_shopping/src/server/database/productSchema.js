@@ -25,6 +25,10 @@ const productSchema = new mongoose.Schema({
     }, 
     imgUrl: {
         type: String, 
+    }, 
+    quantity: {
+        type: String, 
+        required: true,
     }
 },{
     timestamps: true, 

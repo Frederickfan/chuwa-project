@@ -1,10 +1,19 @@
 import ProductControlForm from "../../form/productControlForm";
 
-export default function CreateOrEditProduct({ panelStatus, setPanelStatus }) {
+export default function CreateOrEditProduct({
+  panelStatus,
+  setPanelStatus,
+  editId,
+  setProducts,
+  products,
+}) {
   return (
-    <ProductControlForm 
+    <ProductControlForm
+      products={products}
+      editId={editId}
+      setProducts={setProducts}
       panelStatus={panelStatus}
-      setPanelStatus={setPanelStatus}  
+      setPanelStatus={setPanelStatus}
     ></ProductControlForm>
   );
 }

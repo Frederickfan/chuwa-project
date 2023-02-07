@@ -10,8 +10,13 @@ const Home = () => {
   const [panelStatus, setPanelStatus] = useState(PANEL_STATUS.LOADDING);
   const [visible, setVisible] = useState(true);
   const [products, setProducts] = useState([]);
-  const shouldLogUser= useRef(true);
+  const [editId, setEditId] = useState(null);
+  const [sortStatus, setSortStatus] = useState("last_added");
+
+  const shouldLogUser = useRef(true);
   const shouldLogProducts = useRef(true);
+  const shouldLogEditId = useRef(true);
+  const shouldLogSortStatus = useRef(true);
 
   useEffect(() => {
     if (!shouldLogUser.current) {
@@ -58,8 +63,10 @@ const Home = () => {
     }
     shouldLogProducts.current = false;
 
-    console.log(`reached here in second useEffect`);
-    // if user current in authentication page, no need to gain products data. 
+    console.log(
+      `reached here in second useEffect and panelStatus is ${panelStatus}`
+    );
+    // if user current in authentication page, no need to gain products data.
     if (
       panelStatus === PANEL_STATUS.SIGN_IN ||
       panelStatus === PANEL_STATUS.SIGN_UP ||
@@ -68,7 +75,7 @@ const Home = () => {
       return () => {};
     }
 
-    // Gain data from localStorage first. 
+    // Gain data from localStorage first.
     async function getAllProducts() {
       const response = await fetch("/getAllProducts");
 
@@ -83,9 +90,9 @@ const Home = () => {
     }
 
     const productsData = JSON.parse(window.localStorage.getItem("products"));
-    
-    // When use logged in, the product data in localStorage is null. 
-    // So we get all data from DB, and save to localStorage. 
+
+    // When use logged in, the product data in localStorage is null.
+    // So we get all data from DB, and save to localStorage.
     if (productsData !== null) {
       setProducts(productsData);
     } else {
@@ -94,10 +101,36 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    if (!shouldLogEditId.current) {
+      return () => {};
+    }
+    shouldLogEditId.current = false;
+
+    const editIdData = window.localStorage.getItem("editId");
+    if (editIdData !== null) {
+      setEditId(editIdData);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLogSortStatus.current) {
+      return () => {};
+    }
+    shouldLogSortStatus.current = false;
+
+    const sortStatusData = window.localStorage.getItem("sortStatus");
+    if (sortStatusData !== null) {
+      setSortStatus(sortStatusData);
+    }
+  }, []);
+
+  useEffect(() => {
     window.localStorage.setItem("panelStatus", panelStatus);
     window.localStorage.setItem("user", JSON.stringify(user));
     window.localStorage.setItem("products", JSON.stringify(products));
-  }, [panelStatus, user, products]);
+    window.localStorage.setItem("editId", editId);
+    window.localStorage.setItem("sortStatus", sortStatus);
+  }, [panelStatus, user, products, editId, sortStatus]);
 
   return panelStatus === PANEL_STATUS.LOADDING ? (
     <div>loading...</div>
@@ -124,10 +157,15 @@ const Home = () => {
         ></Authentication>
       ) : (
         <MainPage
+          user={user}
+          editId={editId}
+          setEditId={setEditId}
           products={products}
           setProducts={setProducts}
           panelStatus={panelStatus}
           setPanelStatus={setPanelStatus}
+          sortStatus={sortStatus}
+          setSortStatus={setSortStatus}
         ></MainPage>
       )}
     </>
