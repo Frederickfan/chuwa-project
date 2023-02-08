@@ -4,6 +4,8 @@ import CreateOrEditProduct from "./create_product";
 import { PANEL_STATUS } from "../constants";
 
 export default function MainPage({
+  cart,
+  setCart,
   user,
   products,
   setProducts,
@@ -40,6 +42,8 @@ export default function MainPage({
             setSortStatus={setSortStatus}
           ></ProductsController>
           <ProductsGallary
+            cart={cart}
+            setCart={setCart}
             user={user}
             setEditId={setEditId}
             products={products}

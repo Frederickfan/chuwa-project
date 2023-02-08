@@ -2,7 +2,14 @@ import { ajaxConfigHelper } from "../../helper";
 import {PANEL_STATUS} from "../constants";
 import "./index.css";
 
-export default function Header({user, setUser, panelStatus, setVisible, setPanelStatus }) {
+export default function Header({
+  user, 
+  setUser, 
+  panelStatus, 
+  setVisible, 
+  setPanelStatus, 
+  setProducts,
+}) {
   const signInHandler = () => {
     setVisible((prevState) => !prevState);
   };

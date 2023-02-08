@@ -11,6 +11,7 @@ import "./index.css";
 import { ajaxConfigHelper } from "../../../helper";
 import PlusMinusControl from "./plus_minus_controller";
 const { Meta } = Card;
+const { v4: uuidv4 } = require("uuid");
 
 export default function ProductCard({
   user,
@@ -27,18 +28,12 @@ export default function ProductCard({
   setPanelStatus,
   setEditId,
   setProducts,
+  cart,
+  setCart,
 }) {
-  const localCount = JSON.parse(window.localStorage.getItem(`count_${id}`));
   const [visible, setVisible] = React.useState(false);
-  const [count, setCount] = useState(
-    localCount === null 
-    ? 0
-    : localCount 
-  );
-
-  useEffect(() => {
-    window.localStorage.setItem(`count_${id}`, JSON.stringify(count));
-  }, [count]);
+  // delete below
+  const [count, setCount] = useState(0);
 
   const showModal = () => {
     setVisible(true);
@@ -66,9 +61,24 @@ export default function ProductCard({
     setVisible(false);
   };
 
-  const addHandler = () => {
-    console.log("hahaah");
+  const addHandler = async () => {
+    const response = await fetch(
+      "/addCartProduct",
+      ajaxConfigHelper(
+        {
+          id: uuidv4(),
+          product_id: id,
+          product_name: name,
+          amount: 1,
+          user_id: user.id,
+        },
+        "POST"
+      )
+    );
+    const {message, status} = await response.json();
+    alert(message);
     setCount((count) => count + 1);
+
   };
   return (
     <>
@@ -83,6 +93,8 @@ export default function ProductCard({
 
           {count > 0 ? (
             <PlusMinusControl
+              user_id={user.id}
+              product_id={id}
               count={count}
               setCount={setCount}
             ></PlusMinusControl>

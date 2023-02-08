@@ -3,24 +3,31 @@ import Authentication from "../authentication";
 import { useState, useEffect, useRef } from "react";
 import { PANEL_STATUS } from "../constants/";
 import MainPage from "../main_page";
+import Cart from "../../../server/database/cartModel";
 const { v4: uuidv4 } = require("uuid");
 
 const Home = () => {
-  const [user, setUser] = useState(null);
   const [panelStatus, setPanelStatus] = useState(PANEL_STATUS.LOADDING);
   const [visible, setVisible] = useState(true);
   const [products, setProducts] = useState([]);
   const [editId, setEditId] = useState(null);
   const [sortStatus, setSortStatus] = useState("last_added");
+  const [cart, setCart] = useState(null);
+  const [user, setUser] = useState(null);
+
+  const [userUseEffectFinished, setUserUseEffectFinished] = useState(false);
 
   const shouldLogUser = useRef(true);
   const shouldLogProducts = useRef(true);
   const shouldLogEditId = useRef(true);
   const shouldLogSortStatus = useRef(true);
+  const shouldLogCart = useRef(true);
+
+  // gain cart data from the backend first.
 
   useEffect(() => {
     if (!shouldLogUser.current) {
-      return () => {};
+      return;
     }
     shouldLogUser.current = false;
 
@@ -50,12 +57,46 @@ const Home = () => {
       // Logged in
       setUser(userData);
       setPanelStatus(panelStatusData);
-
-      // adjust
     }
 
     getUserStatus();
+    return () => setUserUseEffectFinished(true);
   }, []);
+
+  useEffect(() => {
+    if (!userUseEffectFinished || !user) return;
+
+    async function getCart(user) {
+      const response = await fetch(`/getCart/:${user.id}`);
+
+      const { status, cart } = await response.json();
+
+      console.log(`GET Cart request status: ${status}`);
+      if (status === "succeed") {
+        setCart(cart);
+      } else {
+        alert("Internal server error");
+      }
+    }
+
+    console.log(`userUseEffect ${userUseEffectFinished}`);
+    console.log(
+      `Let's check current userData in localStorage before pulling cart data, user is ${user}`
+    );
+    if (user === null) {
+      setCart(null);
+      return () => {};
+    }
+
+    console.log(`we want the cart info from this user_id ${user.id}`);
+    // pull data from localStorage first.
+    const cartData = JSON.parse(window.localStorage.getItem("cart"));
+    if (cartData !== null) {
+      setCart(cartData);
+    } else {
+      getCart(user);
+    }
+  }, [userUseEffectFinished, user]);
 
   useEffect(() => {
     if (!shouldLogProducts.current) {
@@ -130,7 +171,8 @@ const Home = () => {
     window.localStorage.setItem("products", JSON.stringify(products));
     window.localStorage.setItem("editId", editId);
     window.localStorage.setItem("sortStatus", sortStatus);
-  }, [panelStatus, user, products, editId, sortStatus]);
+    window.localStorage.setItem("cart", JSON.stringify(cart));
+  }, [panelStatus, user, products, editId, sortStatus, cart]);
 
   return panelStatus === PANEL_STATUS.LOADDING ? (
     <div>loading...</div>
@@ -143,6 +185,7 @@ const Home = () => {
         setVisible={setVisible}
         panelStatus={panelStatus}
         setPanelStatus={setPanelStatus}
+        setProducts={setProducts}
       ></Header>
       {panelStatus === PANEL_STATUS.SIGN_IN ||
       panelStatus === PANEL_STATUS.SIGN_UP ||
@@ -157,6 +200,8 @@ const Home = () => {
         ></Authentication>
       ) : (
         <MainPage
+          cart={cart}
+          setCart={setCart}
           user={user}
           editId={editId}
           setEditId={setEditId}
