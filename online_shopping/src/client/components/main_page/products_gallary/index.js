@@ -11,6 +11,9 @@ export default function ProductsGallary({
     setProducts,
     cart, 
     setCart,
+    detailId, 
+    setDetailId,
+    setIsOnDetailPage,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage, setPostsPerPage] = useState(8);
@@ -23,6 +26,8 @@ export default function ProductsGallary({
     <>
       <h1>Products Gallary</h1>
       <ProductList
+        detailId={detailId}
+        setDetailId={setDetailId}
         cart={cart}
         setCart={setCart}
         user={user}
@@ -31,6 +36,7 @@ export default function ProductsGallary({
         panelStatus={panelStatus}
         setPanelStatus={setPanelStatus}
         setProducts={setProducts}
+        setIsOnDetailPage={setIsOnDetailPage}
       ></ProductList>
       <Pagination
         totalPosts={products.length}

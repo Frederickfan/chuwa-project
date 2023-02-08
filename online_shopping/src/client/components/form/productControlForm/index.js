@@ -11,6 +11,7 @@ const ProductControlForm = ({
   editId,
   setProducts,
   products,
+  isOnDetailPage,
 }) => {
   const editingProduct = products.find((product) => product.id === editId);
   const editingProductUrl = editingProduct ? editingProduct.imgUrl : "";
@@ -69,6 +70,14 @@ const ProductControlForm = ({
       setPanelStatus(PANEL_STATUS.MAIN_PAGE);
     }
   };
+
+  const backHandler = (isOnDetailPage) => {
+    if (isOnDetailPage) {
+      setPanelStatus(PANEL_STATUS.PRODUCT_DETAIL);
+    } else {
+      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+    }
+  }
 
   return (
     <>
@@ -160,7 +169,7 @@ const ProductControlForm = ({
           <Button
             type="primary"
             htmlType="submit"
-            onClick={() => setPanelStatus(PANEL_STATUS.MAIN_PAGE)}
+            onClick={() => backHandler(isOnDetailPage)}
           >
             Back
           </Button>
