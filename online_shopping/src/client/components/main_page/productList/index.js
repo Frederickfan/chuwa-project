@@ -9,13 +9,16 @@ export default function ProductList({
   setProductID,
   setEditId,
   setProducts,
+  cart, 
+  setCart,
 }) {
-  console.log(products);
   return (
     <div className="product_list">
       {products.map((product, index) => {
         return (
           <ProductCard
+            cart={cart}
+            setCart={setCart}
             user={user}
             key={`${product.id}-${index}`}
             imgUrl={product.imgUrl}

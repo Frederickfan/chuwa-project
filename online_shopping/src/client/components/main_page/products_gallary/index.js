@@ -3,7 +3,15 @@ import Pagination from "../pagination";
 import { useState } from "react";
 
 export default function ProductsGallary({
-    user, panelStatus, setPanelStatus, products, setEditId, setProducts }) {
+    user, 
+    panelStatus, 
+    setPanelStatus, 
+    products, 
+    setEditId, 
+    setProducts,
+    cart, 
+    setCart,
+}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage, setPostsPerPage] = useState(8);
 
@@ -15,6 +23,8 @@ export default function ProductsGallary({
     <>
       <h1>Products Gallary</h1>
       <ProductList
+        cart={cart}
+        setCart={setCart}
         user={user}
         setEditId={setEditId}
         products={currentProducts}

@@ -4,6 +4,8 @@ import CreateOrEditProduct from "./create_product";
 import { PANEL_STATUS } from "../constants";
 
 export default function MainPage({
+  cart,
+  setCart,
   user,
   products,
   setProducts,
@@ -27,7 +29,6 @@ export default function MainPage({
       return Number(b.price) - Number(a.price);
     });
   }
-  console.log(`sorted products here ${products}`);
 
   const pageSwitchHelper = (panelStatus) => {
     if (panelStatus === PANEL_STATUS.MAIN_PAGE) {
@@ -41,6 +42,8 @@ export default function MainPage({
             setSortStatus={setSortStatus}
           ></ProductsController>
           <ProductsGallary
+            cart={cart}
+            setCart={setCart}
             user={user}
             setEditId={setEditId}
             products={products}

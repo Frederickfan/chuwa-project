@@ -15,6 +15,7 @@ var app = express();
 const { v4: uuidv4 } = require("uuid");
 const Customer = require("./database/customerModel");
 const Product = require("./database/productModel");
+const Cart = require("./database/cartModel");
 const { appPackageJson } = require("../../config/paths");
 const { connect } = require("http2");
 const { query } = require("express");
@@ -244,7 +245,17 @@ app.post("/addProduct", async (req, res) => {
 app.get("/getAllProducts", async (_, res) => {
   const productDatabase = await Product.find({});
   const products = productDatabase.map(
-    ({ id, name, detail, category, price, imgUrl, createdAt, updatedAt, quantity }) => {
+    ({
+      id,
+      name,
+      detail,
+      category,
+      price,
+      imgUrl,
+      createdAt,
+      updatedAt,
+      quantity,
+    }) => {
       return {
         id,
         name,
@@ -264,7 +275,7 @@ app.get("/getAllProducts", async (_, res) => {
 // 8 PUT edit a product with id
 app.put("/editProduct", async (req, res) => {
   console.log(req.body);
-  if (!(req.body)) {
+  if (!req.body) {
     res.status(404).json({
       error: "failed",
       message: "Input is not valid",
@@ -274,48 +285,176 @@ app.put("/editProduct", async (req, res) => {
 
   const productFromDB = await Product.findOne({ id: req.body.id });
 
-    const { modifiedCount } = await productFromDB.updateOne({
-      ...req.body,
+  const { modifiedCount } = await productFromDB.updateOne({
+    ...req.body,
+  });
+  if (modifiedCount) {
+    res.status(200).json({
+      message: "update succeed",
+      editStatus: "succeed",
     });
-    if (modifiedCount) {
-      res.status(200).json({
-        message: 'update succeed', 
-        editStatus: 'succeed',
-      });
-      return; 
-    }
-    
-    res.status(500).json({
-      message: 'Internal Server Error', 
-      status: 'failed', 
-    })
+    return;
+  }
+
+  res.status(500).json({
+    message: "Internal Server Error",
+    status: "failed",
+  });
+});
+
+// 9 DELETE a product with id.
+app.delete("/delProduct", async (req, res) => {
+  if (!(req.body && req.body.id)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const id = req.body.id;
+  const { deletedCount } = await Product.deleteOne({ id });
+  if (deletedCount) {
+    res.status(200).json({
+      message: "delete succeed",
+      status: "succeed",
+    });
+  } else {
+    res.status(404).json({
+      message: "delete failed",
+      status: "failed",
+    });
+  }
+});
+
+// 10 GET cart with user_id
+app.get("/getCart/:id", async (req, res) => {
+  if (!req.body) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  console.log(req.params);
+  const user_id = req.params.id.slice(1);
+  const cartFromDB = await Cart.find({ user_id: user_id });
+  console.log(`cart data from db ${cartFromDB}`);
+
+  const cart = {};
+  for (let cartData of cartFromDB) {
+    cart[cartData["product_id"]] = cartData["amount"];
+  }
+  console.log(`cart to return to frontend is ${JSON.stringify(cart)}`);
+  res.json({
+    status: "succeed",
+    cart: cart,
+  });
+});
+
+// 11 POST add cart product
+app.post("/addCartProduct", async (req, res) => {
+  if (!req.body) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const cartProductFromDB = await Cart.findOne({
+    user_id: req.body.user_id,
+    product_id: req.body.product_id,
+  }).exec();
+
+  if (cartProductFromDB !== null) {
+    console.log(400);
+    res.status(400).json({
+      error: "failed",
+      message: "Cart product already exists! modify amount instead!",
+    });
+    return;
+  }
+
+  const cartProduct = new Cart({
+    ...req.body,
   });
 
-  // 9 DELETE a product with id. 
-  app.delete("/delProduct", async(req, res) => {
-    if (!(req.body && req.body.id)) {
-      res.status(404).json({
-        error: "failed",
-        message: "Input is not valid",
-      });
-      return;
-    }
+  const newCartProduct = await cartProduct.save();
 
-    const id = req.body.id; 
-    const {deletedCount} = await Product.deleteOne({id});
-    if (deletedCount) {
-      res.status(200).json({
-        message: 'delete succeed', 
-        status: "succeed",
-      })
-    } else {
-      res.status(404).json({
-        message: "delete failed",
-        status: "failed",
-      })
-    }
+  if (newCartProduct === cartProduct) {
+    res.json({
+      message: "New product in cart created successfully",
+      status: "201",
+    });
+    return;
+  }
+});
 
-  })
+// 12 add or minus the amount in cart
+app.put("/modCartAmount", async (req, res) => {
+  if (!(req.body && req.body.user_id && req.body.product_id && req.body.type)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const cartProductFromDB = await Cart.findOne({
+    user_id: req.body.user_id,
+    product_id: req.body.product_id,
+  });
+
+  console.log(
+    `The product amount waiting to be added is the cart product ${cartProductFromDB}`
+  );
+  const newAmount =
+    req.body.type === "+"
+      ? Number(cartProductFromDB.amount) + 1
+      : Number(cartProductFromDB.amount) - 1;
+  const { modifiedCount } = await cartProductFromDB.updateOne({
+    amount: newAmount,
+  });
+  if (modifiedCount) {
+    res.status(200).json({
+      message: "cart product modified by 1 succeed",
+      status: "succeed",
+    });
+    return;
+  } else {
+    res.status(504).json({
+      message: "Internal Server error",
+      status: "failed",
+    });
+  }
+});
+
+// DELETE the cart product
+app.delete("/deleteCartProduct", async (req, res) => {
+  if (!(req.body && req.body.user_id && req.body.product_id)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const { deletedCount } = await Cart.deleteOne({ user_id: req.body.user_id, product_id: req.body.product_id });
+  if (deletedCount) {
+    res.status(200).json({
+      message: "delete succeed",
+      status: "succeed",
+    });
+  } else {
+    res.status(404).json({
+      message: "delete failed",
+      status: "failed",
+    });
+  }
+
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
