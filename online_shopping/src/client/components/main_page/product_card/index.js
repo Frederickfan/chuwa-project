@@ -46,7 +46,6 @@ export default function ProductCard({
     const { products } = await updatedProducts.json();
     
     if (status === "succeed") {
-      alert(message);
       setProducts(products);
       setPanelStatus(PANEL_STATUS.MAIN_PAGE);
     }
@@ -71,7 +70,6 @@ export default function ProductCard({
       )
     );
     const { message, status } = await response.json();
-    alert(message);
     setCart((cart) => {
       return {
         ...cart,

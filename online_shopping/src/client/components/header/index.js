@@ -8,7 +8,7 @@ export default function Header({
   panelStatus, 
   setVisible, 
   setPanelStatus, 
-  setProducts,
+  setCart,
 }) {
   const signInHandler = () => {
     setVisible((prevState) => !prevState);
@@ -31,6 +31,7 @@ export default function Header({
         alert(`Status: ${message}`);
         setUser(null);
         setPanelStatus(PANEL_STATUS.SIGN_IN);
+        setCart(null);
     }
   };
 

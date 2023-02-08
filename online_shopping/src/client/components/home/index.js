@@ -212,6 +212,7 @@ const Home = () => {
         panelStatus={panelStatus}
         setPanelStatus={setPanelStatus}
         setProducts={setProducts}
+        setCart={setCart}
       ></Header>
       {panelStatus === PANEL_STATUS.SIGN_IN ||
       panelStatus === PANEL_STATUS.SIGN_UP ||

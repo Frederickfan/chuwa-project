@@ -35,7 +35,6 @@ export default function ProductDetail({
       )
     );
     const { message, status } = await response.json();
-    alert(message);
     setCart((cart) => {
       return {
         ...cart,
