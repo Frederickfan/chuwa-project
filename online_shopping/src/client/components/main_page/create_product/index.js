@@ -6,9 +6,11 @@ export default function CreateOrEditProduct({
   editId,
   setProducts,
   products,
+  isOnDetailPage,
 }) {
   return (
     <ProductControlForm
+      isOnDetailPage={isOnDetailPage}
       products={products}
       editId={editId}
       setProducts={setProducts}

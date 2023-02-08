@@ -1,5 +1,7 @@
 import ProductCard from "../product_card";
 import "./index.css";
+const { v4: uuidv4 } = require("uuid");
+
 
 export default function ProductList({
   user,
@@ -11,16 +13,21 @@ export default function ProductList({
   setProducts,
   cart, 
   setCart,
+  detailId, 
+  setDetailId,
+  setIsOnDetailPage,
 }) {
   return (
     <div className="product_list">
       {products.map((product, index) => {
         return (
           <ProductCard
+            detailId={detailId}
+            setDetailId={setDetailId}
             cart={cart}
             setCart={setCart}
             user={user}
-            key={`${product.id}-${index}`}
+            key={uuidv4()}
             imgUrl={product.imgUrl}
             name={product.name}
             detail={product.detail}
@@ -35,6 +42,7 @@ export default function ProductList({
             setProductID={setProductID}
             setEditId={setEditId}
             setProducts={setProducts}
+            setIsOnDetailPage={setIsOnDetailPage}
           ></ProductCard>
         );
       })}

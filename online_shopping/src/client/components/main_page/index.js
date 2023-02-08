@@ -2,6 +2,7 @@ import ProductsController from "./products_controller";
 import ProductsGallary from "./products_gallary";
 import CreateOrEditProduct from "./create_product";
 import { PANEL_STATUS } from "../constants";
+import ProductDetail from "./product_detail";
 
 export default function MainPage({
   cart,
@@ -15,6 +16,10 @@ export default function MainPage({
   setEditId,
   sortStatus,
   setSortStatus,
+  detailId,
+  setDetailId,
+  setIsOnDetailPage,
+  isOnDetailPage,
 }) {
   if (sortStatus === "last_added") {
     products.sort(function (a, b) {
@@ -42,6 +47,8 @@ export default function MainPage({
             setSortStatus={setSortStatus}
           ></ProductsController>
           <ProductsGallary
+            detailId={detailId}
+            setDetailId={setDetailId}
             cart={cart}
             setCart={setCart}
             user={user}
@@ -50,8 +57,22 @@ export default function MainPage({
             panelStatus={panelStatus}
             setPanelStatus={setPanelStatus}
             setProducts={setProducts}
+            setIsOnDetailPage={setIsOnDetailPage}
           ></ProductsGallary>
         </>
+      );
+    } else if (panelStatus === PANEL_STATUS.PRODUCT_DETAIL) {
+      return (
+        <ProductDetail
+          setIsOnDetailPage={setIsOnDetailPage}
+          user={user}
+          cart={cart}
+          setCart={setCart}
+          products={products}
+          detailId={detailId}
+          setPanelStatus={setPanelStatus}
+          setEditId={setEditId}
+        ></ProductDetail>
       );
     } else {
       return (
@@ -62,6 +83,7 @@ export default function MainPage({
             products={products}
             panelStatus={panelStatus}
             setPanelStatus={setPanelStatus}
+            isOnDetailPage={isOnDetailPage}
           ></CreateOrEditProduct>
         </>
       );

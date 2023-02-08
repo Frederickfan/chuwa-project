@@ -14,6 +14,8 @@ const Home = () => {
   const [sortStatus, setSortStatus] = useState("last_added");
   const [cart, setCart] = useState(null);
   const [user, setUser] = useState(null);
+  const [detailId, setDetailId] = useState(null);
+  const [isOnDetailPage, setIsOnDetailPage] = useState(false);
 
   const [userUseEffectFinished, setUserUseEffectFinished] = useState(false);
 
@@ -21,7 +23,8 @@ const Home = () => {
   const shouldLogProducts = useRef(true);
   const shouldLogEditId = useRef(true);
   const shouldLogSortStatus = useRef(true);
-  const shouldLogCart = useRef(true);
+  const shouldLogDetailId = useRef(true);
+  const shouldLogIsOnDetailPage = useRef(true);
 
   // gain cart data from the backend first.
 
@@ -79,10 +82,7 @@ const Home = () => {
       }
     }
 
-    console.log(`userUseEffect ${userUseEffectFinished}`);
-    console.log(
-      `Let's check current userData in localStorage before pulling cart data, user is ${user}`
-    );
+
     if (user === null) {
       setCart(null);
       return () => {};
@@ -154,6 +154,18 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    if (!shouldLogDetailId.current) {
+      return () => {};
+    }
+    shouldLogDetailId.current = false;
+
+    const detailIdData = window.localStorage.getItem("detailId");
+    if (detailIdData !== null) {
+      setDetailId(detailIdData);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!shouldLogSortStatus.current) {
       return () => {};
     }
@@ -166,13 +178,27 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    if (!shouldLogIsOnDetailPage.current) {
+      return () => {};
+    }
+    shouldLogIsOnDetailPage.current = false;
+
+    const isOnDetailPageData = JSON.parse(window.localStorage.getItem("isOnDetailPage"));
+    if (isOnDetailPageData !== null) {
+      setIsOnDetailPage(isOnDetailPageData);
+    }
+  }, []);
+
+  useEffect(() => {
     window.localStorage.setItem("panelStatus", panelStatus);
     window.localStorage.setItem("user", JSON.stringify(user));
     window.localStorage.setItem("products", JSON.stringify(products));
     window.localStorage.setItem("editId", editId);
     window.localStorage.setItem("sortStatus", sortStatus);
     window.localStorage.setItem("cart", JSON.stringify(cart));
-  }, [panelStatus, user, products, editId, sortStatus, cart]);
+    window.localStorage.setItem("isOnDetailPage", JSON.stringify(isOnDetailPage));
+    window.localStorage.setItem("detailId", detailId);
+  }, [panelStatus, user, products, editId, sortStatus, cart, isOnDetailPage]);
 
   return panelStatus === PANEL_STATUS.LOADDING ? (
     <div>loading...</div>
@@ -200,6 +226,10 @@ const Home = () => {
         ></Authentication>
       ) : (
         <MainPage
+          isOnDetailPage={isOnDetailPage}
+          setIsOnDetailPage={setIsOnDetailPage}
+          detailId={detailId}
+          setDetailId={setDetailId}
           cart={cart}
           setCart={setCart}
           user={user}

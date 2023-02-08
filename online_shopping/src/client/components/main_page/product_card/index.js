@@ -17,24 +17,19 @@ export default function ProductCard({
   user,
   name,
   quantity,
-  detail,
-  category,
   id,
   price,
   imgUrl,
-  createdAt,
-  updatedAt,
-  panelStatus,
   setPanelStatus,
   setEditId,
   setProducts,
   cart,
   setCart,
+  setDetailId, 
+  setIsOnDetailPage,
 }) {
   const [visible, setVisible] = React.useState(false);
   // delete below
-  const [count, setCount] = useState(0);
-
   const showModal = () => {
     setVisible(true);
   };
@@ -49,7 +44,7 @@ export default function ProductCard({
     const { message, status } = await deleteResponse.json();
     const updatedProducts = await fetch("/getAllProducts");
     const { products } = await updatedProducts.json();
-
+    
     if (status === "succeed") {
       alert(message);
       setProducts(products);
@@ -75,31 +70,42 @@ export default function ProductCard({
         "POST"
       )
     );
-    const {message, status} = await response.json();
+    const { message, status } = await response.json();
     alert(message);
-    setCount((count) => count + 1);
-
+    setCart((cart) => {
+      return {
+        ...cart,
+        [id]: "1",
+      };
+    });
   };
+
   return (
-    <>
+    <div>
       <div className="card">
         <div className="card_image">
-          <img src={imgUrl} alt={name} />
+          <img src={imgUrl} alt={name} onClick={() => {
+            console.log(`set detail id to be ${id} and re-render`);
+            setPanelStatus(PANEL_STATUS.PRODUCT_DETAIL);
+            setDetailId(id);
+            setIsOnDetailPage(true);
+        }} />
         </div>
         <div className="card_info">
           <h4>{name}</h4>
-          {quantity === "0" ? <div>Out of Stock</div> : <></>}
+          {quantity === "0" ? <div style={{color: "red", border: "1px solid red"}}>Out of Stock</div> : <></>}
           <h4>${price.toLocaleString()}</h4>
 
-          {count > 0 ? (
+          {cart && Number(cart[id]) > 0
+          ? (
             <PlusMinusControl
               user_id={user.id}
               product_id={id}
-              count={count}
-              setCount={setCount}
+              cart={cart}
+              setCart={setCart}
             ></PlusMinusControl>
           ) : (
-            <Button onClick={addHandler}>Add</Button>
+            <Button disabled={quantity === "0"} onClick={addHandler}>Add</Button>
           )}
 
           {user.isAdmin ? (
@@ -138,6 +144,6 @@ export default function ProductCard({
       >
         <p>Are you sure you want to delete this item?</p>
       </Modal>
-    </>
+    </div>
   );
 }

@@ -2,8 +2,8 @@ import React from "react";
 import { Button } from "antd";
 import { ajaxConfigHelper } from "../../../../helper";
 
-const PlusMinusControl = ({ count, setCount, user_id, product_id }) => {
-  const addHandler = async (count, user_id, product_id) => {
+const PlusMinusControl = ({ cart, setCart, user_id, product_id }) => {
+  const addHandler = async (user_id, product_id) => {
     const response = await fetch(
       "/modCartAmount",
       ajaxConfigHelper(
@@ -17,10 +17,15 @@ const PlusMinusControl = ({ count, setCount, user_id, product_id }) => {
     );
     const { message, status } = await response.json();
     alert(message);
-    setCount((count) => count + 1);
+    setCart((cart) => {
+      return {
+        ...cart,
+        [product_id]: String(Number(cart[product_id]) + 1),
+      };
+    });
   };
-  const minusHandler = async (count, user_id, product_id) => {
-    if (count > 1) {
+  const minusHandler = async (user_id, product_id) => {
+    if (Number(cart[product_id]) > 1) {
       const response = await fetch(
         "/modCartAmount",
         ajaxConfigHelper(
@@ -34,7 +39,12 @@ const PlusMinusControl = ({ count, setCount, user_id, product_id }) => {
       );
       const { message, status } = await response.json();
       alert(message);
-      setCount((count) => count - 1);
+      setCart((cart) => {
+        return {
+          ...cart,
+          [product_id]: String(Number(cart[product_id]) - 1),
+        };
+      });
     } else {
       const response = await fetch(
         "/deleteCartProduct",
@@ -47,19 +57,24 @@ const PlusMinusControl = ({ count, setCount, user_id, product_id }) => {
         )
       );
 
-      const {message, status} = await response.json();
+      const { message, status } = await response.json();
       alert(message);
-      setCount((count) => count - 1);
+      setCart(cart => {
+        return {
+            ...cart,
+            [product_id]: String(0),
+        };
+    })
     }
   };
 
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
-      <Button onClick={() => minusHandler(count, user_id, product_id)}>
+      <Button onClick={() => minusHandler(user_id, product_id)}>
         -
       </Button>
-      <div style={{ margin: "0 10px" }}>{count}</div>
-      <Button onClick={() => addHandler(count, user_id, product_id)}>+</Button>
+      <div style={{ margin: "0 10px" }}>{cart[product_id]}</div>
+      <Button onClick={() => addHandler(user_id, product_id)}>+</Button>
     </div>
   );
 };

@@ -6,6 +6,7 @@ export const PANEL_STATUS = {
     MAIN_PAGE: "main_page",
     CREATE_PRODUCT: "create_product_page",
     EDIT_PRODUCT: "edit_product_page",
+    PRODUCT_DETAIL: "product_detail",
 };
 
 
