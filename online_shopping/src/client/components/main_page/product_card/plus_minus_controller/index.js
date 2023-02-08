@@ -16,7 +16,6 @@ const PlusMinusControl = ({ cart, setCart, user_id, product_id }) => {
       )
     );
     const { message, status } = await response.json();
-    alert(message);
     setCart((cart) => {
       return {
         ...cart,
@@ -38,7 +37,6 @@ const PlusMinusControl = ({ cart, setCart, user_id, product_id }) => {
         )
       );
       const { message, status } = await response.json();
-      alert(message);
       setCart((cart) => {
         return {
           ...cart,
@@ -58,7 +56,6 @@ const PlusMinusControl = ({ cart, setCart, user_id, product_id }) => {
       );
 
       const { message, status } = await response.json();
-      alert(message);
       setCart(cart => {
         return {
             ...cart,
