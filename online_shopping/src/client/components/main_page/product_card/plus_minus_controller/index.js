@@ -2,7 +2,14 @@ import React from "react";
 import { Button } from "antd";
 import { ajaxConfigHelper } from "../../../../helper";
 
-const PlusMinusControl = ({ cart, setCart, user_id, product_id }) => {
+const PlusMinusControl = ({ 
+  cart, 
+  setCart, 
+  user_id, 
+  product_id 
+}) => {
+  console.log(`This is the setCart function ${JSON.stringify(setCart)}`);
+  cart = cart ? cart : {};
   const addHandler = async (user_id, product_id) => {
     const response = await fetch(
       "/modCartAmount",

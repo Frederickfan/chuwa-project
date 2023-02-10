@@ -16,6 +16,7 @@ const { v4: uuidv4 } = require("uuid");
 const Customer = require("./database/customerModel");
 const Product = require("./database/productModel");
 const Cart = require("./database/cartModel");
+const Promocode = require("./database/promoCodeModel");
 const { appPackageJson } = require("../../config/paths");
 const { connect } = require("http2");
 const { query } = require("express");
@@ -441,7 +442,10 @@ app.delete("/deleteCartProduct", async (req, res) => {
     return;
   }
 
-  const { deletedCount } = await Cart.deleteOne({ user_id: req.body.user_id, product_id: req.body.product_id });
+  const { deletedCount } = await Cart.deleteOne({
+    user_id: req.body.user_id,
+    product_id: req.body.product_id,
+  });
   if (deletedCount) {
     res.status(200).json({
       message: "delete succeed",
@@ -453,8 +457,74 @@ app.delete("/deleteCartProduct", async (req, res) => {
       status: "failed",
     });
   }
-
 });
+
+//  CREATE new promotion code
+app.post("/createPromocode", async (req, res) => {
+  if (!(req.body && req.body.promocode && req.body.discount)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  // check if the promotion code already exists.
+  const promocodeFromDB = await Promocode.findOne({
+    promocode: req.body.promocode,
+  }).exec();
+
+  if (promocodeFromDB !== null) {
+    console.log(400);
+    res.status(400).json({
+      code: "400",
+      status: "failed",
+      message: "Promotion code already exists, please create a new one!",
+    });
+    return;
+  }
+
+  const promocode = new Promocode({
+    promocode: req.body.promocode,
+    discount: req.body.discount,
+  });
+
+  const newPromocode = await promocode.save();
+
+  if (newPromocode === promocode) {
+    res.json({
+      message: "New promotion code created successfully",
+      status: "succeed",
+      code: "201",
+    });
+    return;
+  }
+
+  res.status("500").json({
+    message: "Add promotion failed, status 400",
+    status: "failed",
+    code: "500",
+  });
+});
+
+// GET discount 
+app.get("/getPromocode/:promocode", async(req, res) => {
+  const promocodeFromDB = await Promocode.findOne({ promocode: req.params.promocode.slice(1) });
+  if (promocodeFromDB === null) {
+    console.log("code does not exist");
+    res.json({
+      message: "Promotion code does not exit.",
+      status: "204",
+    });
+    return;
+  } else {
+    res.json({
+      status: "200",
+      message: "Succeed!",
+      discount: promocodeFromDB.discount,
+    });
+  }
+})
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

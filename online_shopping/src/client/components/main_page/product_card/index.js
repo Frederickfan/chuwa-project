@@ -92,7 +92,7 @@ export default function ProductCard({
         <div className="card_info">
           <h4>{name}</h4>
           {quantity === "0" ? <div style={{color: "red", border: "1px solid red"}}>Out of Stock</div> : <></>}
-          <h4>${price.toLocaleString()}</h4>
+          <h4>${Number(price).toFixed(2)}</h4>
 
           {cart && Number(cart[id]) > 0
           ? (

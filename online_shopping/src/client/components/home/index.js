@@ -6,7 +6,7 @@ import MainPage from "../main_page";
 import Cart from "../../../server/database/cartModel";
 const { v4: uuidv4 } = require("uuid");
 
-const Home = () => {
+const Home = ({ setHasError }) => {
   const [panelStatus, setPanelStatus] = useState(PANEL_STATUS.LOADDING);
   const [visible, setVisible] = useState(true);
   const [products, setProducts] = useState([]);
@@ -81,7 +81,6 @@ const Home = () => {
         alert("Internal server error");
       }
     }
-
 
     if (user === null) {
       setCart(null);
@@ -183,7 +182,9 @@ const Home = () => {
     }
     shouldLogIsOnDetailPage.current = false;
 
-    const isOnDetailPageData = JSON.parse(window.localStorage.getItem("isOnDetailPage"));
+    const isOnDetailPageData = JSON.parse(
+      window.localStorage.getItem("isOnDetailPage")
+    );
     if (isOnDetailPageData !== null) {
       setIsOnDetailPage(isOnDetailPageData);
     }
@@ -196,7 +197,10 @@ const Home = () => {
     window.localStorage.setItem("editId", editId);
     window.localStorage.setItem("sortStatus", sortStatus);
     window.localStorage.setItem("cart", JSON.stringify(cart));
-    window.localStorage.setItem("isOnDetailPage", JSON.stringify(isOnDetailPage));
+    window.localStorage.setItem(
+      "isOnDetailPage",
+      JSON.stringify(isOnDetailPage)
+    );
     window.localStorage.setItem("detailId", detailId);
   }, [panelStatus, user, products, editId, sortStatus, cart, isOnDetailPage]);
 
@@ -205,7 +209,9 @@ const Home = () => {
   ) : (
     <>
       <Header
+        cart={cart}
         user={user}
+        products={products}
         setUser={setUser}
         visible={visible}
         setVisible={setVisible}
@@ -227,6 +233,7 @@ const Home = () => {
         ></Authentication>
       ) : (
         <MainPage
+          setHasError={setHasError}
           isOnDetailPage={isOnDetailPage}
           setIsOnDetailPage={setIsOnDetailPage}
           detailId={detailId}
