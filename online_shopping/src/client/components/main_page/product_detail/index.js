@@ -5,6 +5,7 @@ import { PANEL_STATUS } from "../../constants";
 import ErrorModal from "../../Error";
 import { useState } from "react";
 import ErrorPage from "../../Error";
+import { useErrorHandler } from "react-error-boundary";
 const { v4: uuidv4 } = require("uuid");
 
 export default function ProductDetail({
@@ -23,10 +24,12 @@ export default function ProductDetail({
   const [unexpectedError, setUnexpectedError] = useState(false);
 
   console.log(`detail Id is ${JSON.stringify(detailId)}`);
-  const currentProduct = products.find((product) => product.id === detailId);
+  const product = products.find((product) => product.id === detailId);
+  const currentProduct = product ? product : {};
   const id = currentProduct.id;
   const quantity = currentProduct.quantity;
   const name = currentProduct.name;
+  const handleError = useErrorHandler();
 
   const addHandler = async () => {
     const response = await fetch(
@@ -56,24 +59,29 @@ export default function ProductDetail({
   };
 
   const handleOk = async () => {
-    if (cart && Number(cart[detailId]) >= 1) {
-      setUnexpectedError(true);
-      return;
-    }
+    try {
+      if (!cart) return;
+      console.log(Number(cart[detailId]));
+      if (Number(cart[detailId]) >= 1) {
+        throw new Error("Remove items from cart before delete prodcut!");
+      } else {
+        setVisible(false);
+        // Perform the delete operation here
+        const deleteResponse = await fetch(
+          "/delProduct",
+          ajaxConfigHelper({ id }, "DELETE")
+        );
+        const { message, status } = await deleteResponse.json();
+        const updatedProducts = await fetch("/getAllProducts");
+        const { products } = await updatedProducts.json();
 
-    setVisible(false);
-    // Perform the delete operation here
-    const deleteResponse = await fetch(
-      "/delProduct",
-      ajaxConfigHelper({ id }, "DELETE")
-    );
-    const { message, status } = await deleteResponse.json();
-    const updatedProducts = await fetch("/getAllProducts");
-    const { products } = await updatedProducts.json();
-
-    if (status === "succeed") {
-      setProducts(products);
-      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+        if (status === "succeed") {
+          setProducts(products);
+          setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+        }
+      }
+    } catch (error) {
+      handleError(error);
     }
   };
 

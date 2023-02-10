@@ -20,15 +20,14 @@ const ShoppingCart = ({ user, cart, setCart, products }) => {
   for (const [key, value] of Object.entries(cartData)) {
     totalCount += Number(value);
     const currentProduct = products.find((product) => product.id === key);
+    if (!currentProduct) continue;
     subTotal += Number(currentProduct.price) * Number(value);
   }
   const cartEntries = Object.entries(cartData).filter(
     (entry) => Number(entry[1]) > 0
   );
-  const tax = (subTotal * 0.10).toFixed(2);
+  const tax = (subTotal * 0.1).toFixed(2);
   const total = subTotal - Number(discount) + parseFloat(tax);
-
-  console.log(totalCount);
 
   const applyCodeHandler = async () => {
     const response = await fetch(`/getPromocode/:${promoCode}`);
@@ -47,11 +46,15 @@ const ShoppingCart = ({ user, cart, setCart, products }) => {
   return (
     <div className="shopping-cart">
       <div className="icon-container">
-        <ShoppingCartOutlined
-          style={{ fontSize: "36px" }}
-          onClick={() => setVisible(true)}
-        />
-        {totalCount > 0 && <div className="count-icon">{totalCount}</div>}
+        <div className="cart-icon">
+          <ShoppingCartOutlined
+            style={{ fontSize: "36px" }}
+            onClick={() => setVisible(true)}
+          />
+          {totalCount > 0 && <div className="count-icon">{totalCount}</div>}
+        </div>
+
+        <div className="price">${subTotal.toFixed(2)}</div>
       </div>
       <Drawer
         bodyStyle={{}}
@@ -109,9 +112,7 @@ const ShoppingCart = ({ user, cart, setCart, products }) => {
 
           <div className="Total">
             <h5>Total</h5>
-            <h5>
-              ${Number(total).toFixed(2)}
-            </h5>
+            <h5>${Number(total).toFixed(2)}</h5>
           </div>
 
           <Button>Checkout</Button>

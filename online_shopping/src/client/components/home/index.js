@@ -222,7 +222,9 @@ const Home = ({ setHasError }) => {
       ></Header>
       {panelStatus === PANEL_STATUS.SIGN_IN ||
       panelStatus === PANEL_STATUS.SIGN_UP ||
-      panelStatus === PANEL_STATUS.UPDATE_PASSWORD ? (
+      panelStatus === PANEL_STATUS.UPDATE_PASSWORD ||
+      panelStatus === PANEL_STATUS.LINK_SENT
+      ? (
         <Authentication
           user={user}
           setUser={setUser}

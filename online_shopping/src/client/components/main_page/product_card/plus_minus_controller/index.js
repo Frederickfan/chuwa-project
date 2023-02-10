@@ -8,7 +8,6 @@ const PlusMinusControl = ({
   user_id, 
   product_id 
 }) => {
-  console.log(`This is the setCart function ${JSON.stringify(setCart)}`);
   cart = cart ? cart : {};
   const addHandler = async (user_id, product_id) => {
     const response = await fetch(

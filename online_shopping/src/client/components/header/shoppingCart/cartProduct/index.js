@@ -20,7 +20,8 @@ export default function CartProduct({
 
   console.log(`cart entry is ${cartEntry}`);
   console.log(`cart entry id is ${cartEntry[0]}`);
-  const product = products.find((product) => product.id === cartEntry[0]);
+  const productData = products.find((product) => product.id === cartEntry[0]);
+  const product = productData ? productData : {};
   const quantity = product.quantity;
   const id = product.id;
   const name = product.name;

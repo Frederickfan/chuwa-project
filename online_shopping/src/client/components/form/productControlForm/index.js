@@ -92,7 +92,11 @@ const ProductControlForm = ({
         <h1>Edit Product</h1>
       )}
       <Form
-        initialValues={initialValuesForEditing}
+        initialValues={
+          panelStatus === PANEL_STATUS.CREATE_PRODUCT
+            ? {}
+            : initialValuesForEditing
+        }
         onFinish={
           panelStatus === PANEL_STATUS.CREATE_PRODUCT
             ? addProductHandler

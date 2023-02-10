@@ -58,7 +58,7 @@ app.post("/customerSignUp", async (req, res) => {
     console.log(404);
     res.status(404).json({
       error: "failed",
-      message: "Input is not valid",
+      authenMessage: "Input is not valid",
     });
     return;
   }
@@ -71,8 +71,9 @@ app.post("/customerSignUp", async (req, res) => {
   if (customerFromDB !== null) {
     console.log(400);
     res.status(400).json({
+      status: "400",
       error: "failed",
-      message: "Account already exists, please login instead!",
+      authenMessage: "Account already exists, please login instead!",
     });
     return;
   }
@@ -87,7 +88,7 @@ app.post("/customerSignUp", async (req, res) => {
 
   if (newCustomer === customer) {
     res.json({
-      message: "New customer account signed up successfully",
+      authenMessage: "New customer account signed up successfully",
       status: "201",
       newCustomer: {
         id: newCustomer.id,
@@ -112,7 +113,7 @@ app.put("/customerSignIn", async (req, res) => {
   if (!(req.body && req.body.email && req.body.password)) {
     res.status(404).json({
       error: "failed",
-      message: "Input is not valid",
+      authenMessage: "Input is not valid",
     });
   }
 
@@ -121,18 +122,20 @@ app.put("/customerSignIn", async (req, res) => {
   const customerFromDB = await Customer.findOne({ email: req.body.email });
 
   if (customerFromDB === null) {
-    res.status(400).json({
-      error: "failed",
-      message: "Account does not exist!",
+    res.json({
+      status: "no_account",
+      authenMessage: "Account does not exist!",
     });
+    return;
   }
 
   // check if password match.
   if (customerFromDB.password !== req.body.password) {
-    res.status(400).json({
-      error: "failed",
-      message: "False password!",
+    res.json({
+      status: "wrong_password",
+      authenMessage: "False password!",
     });
+    return;
   }
 
   const { modifiedCount } = await customerFromDB.updateOne({
@@ -141,7 +144,7 @@ app.put("/customerSignIn", async (req, res) => {
 
   if (modifiedCount) {
     res.status("200").json({
-      message: "Successfully logged in!",
+      authenMessage: "Successfully logged in!",
       status: "200",
       customer: {
         id: customerFromDB.id,
@@ -153,7 +156,7 @@ app.put("/customerSignIn", async (req, res) => {
   }
 
   res.status("404").json({
-    message: "update failed",
+    authenMessage: "update failed",
   });
   return;
 });
