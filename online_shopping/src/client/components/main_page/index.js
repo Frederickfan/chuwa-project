@@ -20,6 +20,7 @@ export default function MainPage({
   setDetailId,
   setIsOnDetailPage,
   isOnDetailPage,
+  setHasError,
 }) {
   if (sortStatus === "last_added") {
     products.sort(function (a, b) {
@@ -64,6 +65,7 @@ export default function MainPage({
     } else if (panelStatus === PANEL_STATUS.PRODUCT_DETAIL) {
       return (
         <ProductDetail
+          setHasError={setHasError}
           setIsOnDetailPage={setIsOnDetailPage}
           user={user}
           cart={cart}
@@ -72,6 +74,7 @@ export default function MainPage({
           detailId={detailId}
           setPanelStatus={setPanelStatus}
           setEditId={setEditId}
+          setProducts={setProducts}
         ></ProductDetail>
       );
     } else {

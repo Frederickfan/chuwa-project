@@ -67,7 +67,12 @@ const ProductControlForm = ({
     if (editStatus === "succeed") {
       alert(message);
       setProducts(products);
-      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+
+      if (isOnDetailPage) {
+        setPanelStatus(PANEL_STATUS.PRODUCT_DETAIL);
+      } else {
+        setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+      }
     }
   };
 
@@ -77,7 +82,7 @@ const ProductControlForm = ({
     } else {
       setPanelStatus(PANEL_STATUS.MAIN_PAGE);
     }
-  }
+  };
 
   return (
     <>

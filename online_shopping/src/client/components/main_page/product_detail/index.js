@@ -1,7 +1,10 @@
-import { Button } from "antd";
+import { Button, Modal } from "antd";
 import { ajaxConfigHelper } from "../../../helper";
 import PlusMinusControl from "../product_card/plus_minus_controller";
 import { PANEL_STATUS } from "../../constants";
+import ErrorModal from "../../Error";
+import { useState } from "react";
+import ErrorPage from "../../Error";
 const { v4: uuidv4 } = require("uuid");
 
 export default function ProductDetail({
@@ -13,7 +16,12 @@ export default function ProductDetail({
   setCart,
   setEditId,
   setIsOnDetailPage,
+  setProducts,
+  setHasError,
 }) {
+  const [visible, setVisible] = useState(false);
+  const [unexpectedError, setUnexpectedError] = useState(false);
+
   console.log(`detail Id is ${JSON.stringify(detailId)}`);
   const currentProduct = products.find((product) => product.id === detailId);
   const id = currentProduct.id;
@@ -41,6 +49,36 @@ export default function ProductDetail({
         [id]: "1",
       };
     });
+  };
+
+  const showModal = () => {
+    setVisible(true);
+  };
+
+  const handleOk = async () => {
+    if (cart && Number(cart[detailId]) >= 1) {
+      setUnexpectedError(true);
+      return;
+    }
+
+    setVisible(false);
+    // Perform the delete operation here
+    const deleteResponse = await fetch(
+      "/delProduct",
+      ajaxConfigHelper({ id }, "DELETE")
+    );
+    const { message, status } = await deleteResponse.json();
+    const updatedProducts = await fetch("/getAllProducts");
+    const { products } = await updatedProducts.json();
+
+    if (status === "succeed") {
+      setProducts(products);
+      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+    }
+  };
+
+  const handleCancel = () => {
+    setVisible(false);
   };
 
   return (
@@ -85,16 +123,38 @@ export default function ProductDetail({
             >
               Edit
             </Button>
+            {user.isAdmin ? (
+              <Button
+                type="danger"
+                onClick={showModal}
+                style={{ border: "1px solid red" }}
+              >
+                Delete
+              </Button>
+            ) : (
+              <></>
+            )}
+
             <Button
               type="primary"
               htmlType="submit"
               onClick={() => {
                 setIsOnDetailPage(false);
-                setPanelStatus(PANEL_STATUS.MAIN_PAGE)
-            }}
+                setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+              }}
             >
               Back
             </Button>
+            <Modal
+              title="Delete Item"
+              visible={visible}
+              onOk={handleOk}
+              onCancel={handleCancel}
+              okText="Yes"
+              cancelText="No"
+            >
+              <p>Are you sure you want to delete this item?</p>
+            </Modal>
           </div>
         </div>
       </div>
