@@ -32,7 +32,6 @@ export default function ProductCard({
   const [visible, setVisible] = React.useState(false);
   const handleError = useErrorHandler();
 
-
   // delete below
   const showModal = () => {
     setVisible(true);
@@ -41,7 +40,6 @@ export default function ProductCard({
   const handleOk = async () => {
     try {
       if (!cart) return;
-      console.log(Number(cart[id]));
       if (Number(cart[id]) >= 1) {
         throw new Error("Remove items from cart before delete prodcut!");
       } else {
@@ -70,20 +68,23 @@ export default function ProductCard({
   };
 
   const addHandler = async () => {
-    const response = await fetch(
-      "/addCartProduct",
-      ajaxConfigHelper(
-        {
-          id: uuidv4(),
-          product_id: id,
-          product_name: name,
-          amount: 1,
-          user_id: user.id,
-        },
-        "POST"
-      )
-    );
-    const { message, status } = await response.json();
+    if (user) {
+      const response = await fetch(
+        "/addCartProduct",
+        ajaxConfigHelper(
+          {
+            id: uuidv4(),
+            product_id: id,
+            product_name: name,
+            amount: 1,
+            user_id: user.id,
+          },
+          "POST"
+        )
+      );
+      const { message, status } = await response.json();
+    }
+
     setCart((cart) => {
       return {
         ...cart,
@@ -100,7 +101,6 @@ export default function ProductCard({
             src={imgUrl}
             alt={name}
             onClick={() => {
-              console.log(`set detail id to be ${id} and re-render`);
               setPanelStatus(PANEL_STATUS.PRODUCT_DETAIL);
               setDetailId(id);
               setIsOnDetailPage(true);
@@ -120,7 +120,7 @@ export default function ProductCard({
 
           {cart && Number(cart[id]) > 0 ? (
             <PlusMinusControl
-              user_id={user.id}
+              user_id={user ? user.id : null}
               product_id={id}
               cart={cart}
               setCart={setCart}
@@ -131,7 +131,7 @@ export default function ProductCard({
             </Button>
           )}
 
-          {user.isAdmin ? (
+          {user && user.isAdmin ? (
             <Button
               onClick={() => {
                 setEditId(id);
@@ -144,7 +144,7 @@ export default function ProductCard({
             <></>
           )}
 
-          {user.isAdmin ? (
+          {user && user.isAdmin ? (
             <Button
               type="danger"
               onClick={showModal}

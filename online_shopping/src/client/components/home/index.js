@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { PANEL_STATUS } from "../constants/";
 import MainPage from "../main_page";
 import Cart from "../../../server/database/cartModel";
+import { ajaxConfigHelper } from "../../helper";
 const { v4: uuidv4 } = require("uuid");
 
 const Home = ({ setHasError }) => {
@@ -12,12 +13,22 @@ const Home = ({ setHasError }) => {
   const [products, setProducts] = useState([]);
   const [editId, setEditId] = useState(null);
   const [sortStatus, setSortStatus] = useState("last_added");
-  const [cart, setCart] = useState(null);
-  const [user, setUser] = useState(null);
+  const [cart, setCart] = useState(
+    window.localStorage.getItem("cart")
+      ? JSON.parse(window.localStorage.getItem("cart"))
+      : null
+  );
+  const [user, setUser] = useState(
+    window.localStorage.getItem("user")
+      ? JSON.parse(window.localStorage.getItem("user"))
+      : null
+  );
   const [detailId, setDetailId] = useState(null);
   const [isOnDetailPage, setIsOnDetailPage] = useState(false);
+  const [isMerged, setIsMerged] = useState(false);
 
   const [userUseEffectFinished, setUserUseEffectFinished] = useState(false);
+  const [cartUseEffectFinished, setCartUseEffectFinished] = useState(false);
 
   const shouldLogUser = useRef(true);
   const shouldLogProducts = useRef(true);
@@ -25,6 +36,75 @@ const Home = ({ setHasError }) => {
   const shouldLogSortStatus = useRef(true);
   const shouldLogDetailId = useRef(true);
   const shouldLogIsOnDetailPage = useRef(true);
+  const shouldLogCart = useRef(true);
+
+  const mergeCart = (localCartData, userCart) => {
+    const curUser = JSON.parse(window.localStorage.getItem("user"));
+    const mergedCartData = { ...localCartData };
+    console.log(`curUser is ${curUser}`);
+    console.log(JSON.stringify(localCartData));
+    console.log(JSON.stringify(userCart));
+
+    const modCartDb = async (product_id, user_id, amount) => {
+      const response = await fetch(
+        "/mergeCartAmount",
+        ajaxConfigHelper(
+          { user_id: user_id, product_id: product_id, amount: amount },
+          "PUT"
+        )
+      );
+
+      const { message, status } = await response.json();
+      if (status === "succeed") {
+        console.log(`product with id ${product_id} modified in DATABASE NOW`);
+      }
+    };
+
+    const addCartDb = async (product_id, user_id, amount) => {
+      const productsData = JSON.parse(window.localStorage.getItem("products"));
+      const product = productsData.find((product) => product.id === product_id);
+      const response = await fetch(
+        "/addCartProduct",
+        ajaxConfigHelper(
+          {
+            id: uuidv4(),
+            product_id: product_id,
+            product_name: product.name,
+            amount: amount,
+            user_id: user_id,
+          },
+          "POST"
+        )
+      );
+
+      const { message, status } = await response.json();
+      if (status === "201") {
+        console.log(`product with id ${product_id} added to DATABASE `);
+      }
+    };
+
+    for (const key in userCart) {
+      if (localCartData.hasOwnProperty(key)) {
+        mergedCartData[key] = String(
+          Number(mergedCartData[key]) + Number(userCart[key])
+        );
+      } else {
+        mergedCartData[key] = userCart[key];
+      }
+    }
+
+    // merge后 修改DB
+    for (const key in mergedCartData) {
+      if (userCart.hasOwnProperty(key)) {
+        modCartDb(key, curUser.id, mergedCartData[key]);
+      } else {
+        addCartDb(key, curUser.id, mergedCartData[key]);
+      }
+    }
+
+    setIsMerged(true);
+    return mergedCartData;
+  };
 
   // gain cart data from the backend first.
 
@@ -34,6 +114,11 @@ const Home = ({ setHasError }) => {
     }
     shouldLogUser.current = false;
 
+    console.log(JSON.parse(window.localStorage.getItem('isMerged')));
+    const localIsMerged = JSON.parse(window.localStorage.getItem('isMerged'));
+    if (localIsMerged) {
+      setIsMerged(localIsMerged);
+    }
     // gain data from localStorage
     const panelStatusData = window.localStorage.getItem("panelStatus");
     const userData = JSON.parse(window.localStorage.getItem("user"));
@@ -57,6 +142,7 @@ const Home = ({ setHasError }) => {
         return;
       }
 
+      console.log(`userData is ${JSON.stringify(userData)}`);
       // Logged in
       setUser(userData);
       setPanelStatus(panelStatusData);
@@ -66,35 +152,61 @@ const Home = ({ setHasError }) => {
     return () => setUserUseEffectFinished(true);
   }, []);
 
+
   useEffect(() => {
-    if (!userUseEffectFinished || !user) return;
+    if (!shouldLogCart.current) {
+      return;
+    }
+    shouldLogCart.current = false;
+    const userData = JSON.parse(window.localStorage.getItem("user"));
+    
+    if (!userUseEffectFinished && !user && !userData) return;
 
     async function getCart(user) {
       const response = await fetch(`/getCart/:${user.id}`);
+      const { status, cartInfo } = await response.json();
 
-      const { status, cart } = await response.json();
-
-      console.log(`GET Cart request status: ${status}`);
       if (status === "succeed") {
-        setCart(cart);
+        console.log(`user's cart from db ${JSON.stringify(cart)}`);
+        return cartInfo;
       } else {
         alert("Internal server error");
       }
     }
+    let localCartData = JSON.parse(window.localStorage.getItem("cart"));
+    localCartData = localCartData ? localCartData : {};
 
-    if (user === null) {
-      setCart(null);
-      return () => {};
+    if (!user && !userData) {
+      setCart(localCartData);
+      return () => {
+        setCartUseEffectFinished(true);
+      };
     }
-
-    console.log(`we want the cart info from this user_id ${user.id}`);
     // pull data from localStorage first.
-    const cartData = JSON.parse(window.localStorage.getItem("cart"));
-    if (cartData !== null) {
-      setCart(cartData);
-    } else {
-      getCart(user);
-    }
+    //const cartData = JSON.parse(window.localStorage.getItem("cart"));
+    let newCart = null;
+
+    getCart(userData).then((userCart) => {
+      console.log(
+        `user cart from getCart FUNCTION: ${JSON.stringify(userCart)}`
+      );
+
+      const isMergedData = JSON.parse(window.localStorage.getItem('isMerged'));
+      console.log(`isMergedData is ${isMergedData}`);
+
+      newCart = isMergedData ? localCartData : mergeCart(localCartData, userCart);
+      console.log(`newly MERGED CART IS ${JSON.stringify(newCart)}`);
+      setCart(newCart);
+
+      setCartUseEffectFinished(true);
+    });
+
+    console.log(`newly MERGED CART IS ${JSON.stringify(newCart)}`);
+    setCart(newCart);
+
+    return () => {
+      setCartUseEffectFinished(true);
+    };
   }, [userUseEffectFinished, user]);
 
   useEffect(() => {
@@ -196,13 +308,25 @@ const Home = ({ setHasError }) => {
     window.localStorage.setItem("products", JSON.stringify(products));
     window.localStorage.setItem("editId", editId);
     window.localStorage.setItem("sortStatus", sortStatus);
+
     window.localStorage.setItem("cart", JSON.stringify(cart));
+
     window.localStorage.setItem(
       "isOnDetailPage",
       JSON.stringify(isOnDetailPage)
     );
     window.localStorage.setItem("detailId", detailId);
-  }, [panelStatus, user, products, editId, sortStatus, cart, isOnDetailPage]);
+    window.localStorage.setItem("isMerged", JSON.stringify(isMerged));
+  }, [
+    panelStatus,
+    user,
+    products,
+    editId,
+    sortStatus,
+    cart,
+    isOnDetailPage,
+    isMerged,
+  ]);
 
   return panelStatus === PANEL_STATUS.LOADDING ? (
     <div>loading...</div>
@@ -219,13 +343,16 @@ const Home = ({ setHasError }) => {
         setPanelStatus={setPanelStatus}
         setProducts={setProducts}
         setCart={setCart}
+        setIsMerged={setIsMerged}
       ></Header>
       {panelStatus === PANEL_STATUS.SIGN_IN ||
       panelStatus === PANEL_STATUS.SIGN_UP ||
       panelStatus === PANEL_STATUS.UPDATE_PASSWORD ||
-      panelStatus === PANEL_STATUS.LINK_SENT
-      ? (
+      panelStatus === PANEL_STATUS.LINK_SENT ? (
         <Authentication
+        cart={cart}
+        setIsMerged={setIsMerged}
+        setCart={setCart}
           user={user}
           setUser={setUser}
           visible={visible}

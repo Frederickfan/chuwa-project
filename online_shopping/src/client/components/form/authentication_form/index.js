@@ -12,6 +12,9 @@ export default function AuthenticationForm({
   setUser,
   panelStatus,
   setPanelStatus,
+  cart,
+  setCart,
+  setIsMerged
 }) {
   const [form] = Form.useForm();
   const [email, setEmail] = useState(
@@ -24,6 +27,74 @@ export default function AuthenticationForm({
       ? window.localStorage.getItem("password")
       : ""
   );
+
+  const mergeCart = (customer, localCartData, userCart) => {
+    const curUser = customer;
+    const mergedCartData = { ...localCartData };
+    console.log(`curUser is ${curUser}`);
+    console.log(JSON.stringify(localCartData));
+    console.log(JSON.stringify(userCart));
+
+    const modCartDb = async (product_id, user_id, amount) => {
+      const response = await fetch(
+        "/mergeCartAmount",
+        ajaxConfigHelper(
+          { user_id: user_id, product_id: product_id, amount: amount },
+          "PUT"
+        )
+      );
+
+      const { message, status } = await response.json();
+      if (status === "succeed") {
+        console.log(`product with id ${product_id} modified in DATABASE NOW`);
+      }
+    };
+
+    const addCartDb = async (product_id, user_id, amount) => {
+      const productsData = JSON.parse(window.localStorage.getItem("products"));
+      const product = productsData.find((product) => product.id === product_id);
+      const response = await fetch(
+        "/addCartProduct",
+        ajaxConfigHelper(
+          {
+            id: uuidv4(),
+            product_id: product_id,
+            product_name: product.name,
+            amount: amount,
+            user_id: user_id,
+          },
+          "POST"
+        )
+      );
+
+      const { message, status } = await response.json();
+      if (status === "201") {
+        console.log(`product with id ${product_id} added to DATABASE `);
+      }
+    };
+
+    for (const key in userCart) {
+      if (localCartData.hasOwnProperty(key)) {
+        mergedCartData[key] = String(
+          Number(mergedCartData[key]) + Number(userCart[key])
+        );
+      } else {
+        mergedCartData[key] = userCart[key];
+      }
+    }
+
+    // merge后 修改DB
+    for (const key in mergedCartData) {
+      if (userCart.hasOwnProperty(key)) {
+        modCartDb(key, curUser.id, mergedCartData[key]);
+      } else {
+        addCartDb(key, curUser.id, mergedCartData[key]);
+      }
+    }
+
+    setIsMerged(true);
+    return mergedCartData;
+  };
 
   useEffect(() => {
     window.localStorage.setItem("email", email);
@@ -55,6 +126,17 @@ export default function AuthenticationForm({
   };
 
   const signInHandler = async (email, password) => {
+    async function getCart(user) {
+      const response = await fetch(`/getCart/:${user.id}`);
+      const { status, cartInfo } = await response.json();
+
+      if (status === "succeed") {
+        console.log(`user's cart from db ${JSON.stringify(cartInfo)}`);
+        return cartInfo;
+      } else {
+        alert("Internal server error");
+      }
+    }
     const response = await fetch(
       "/customerSignIn",
       ajaxConfigHelper(
@@ -81,6 +163,28 @@ export default function AuthenticationForm({
     }
 
     if (status === "200") {
+      let localCartData = JSON.parse(window.localStorage.getItem("cart"));
+      localCartData = localCartData ? localCartData : {};
+      let newCart = null;
+      getCart(customer).then((userCart) => {
+        console.log(
+          `user cart from getCart FUNCTION: ${JSON.stringify(userCart)}`
+        );
+
+        const isMergedData = JSON.parse(
+          window.localStorage.getItem("isMerged")
+        );
+        console.log(`isMergedData is ${isMergedData}`);
+
+        newCart = isMergedData
+          ? localCartData
+          : mergeCart(customer, localCartData, userCart);
+        console.log(`newly MERGED CART IS ${JSON.stringify(newCart)}`);
+        setCart(newCart);
+      });
+
+      console.log(`newly MERGED CART IS ${JSON.stringify(newCart)}`);
+      setCart(newCart);
       setUser(customer);
       setPanelStatus(PANEL_STATUS.MAIN_PAGE);
     }
@@ -125,7 +229,11 @@ export default function AuthenticationForm({
           password: password,
         }}
         onFinish={() => {
-          if (email.trim() === "" || (password.trim() === "" && panelStatus != PANEL_STATUS.UPDATE_PASSWORD)) {
+          if (
+            email.trim() === "" ||
+            (password.trim() === "" &&
+              panelStatus != PANEL_STATUS.UPDATE_PASSWORD)
+          ) {
             message.error("Email or Password is empty!");
             return;
           }

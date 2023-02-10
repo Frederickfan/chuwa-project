@@ -14,6 +14,7 @@ export default function Header({
   cart,
   setCart,
   products,
+  setIsMerged,
 }) {
   const signInHandler = () => {
     setVisible((prevState) => !prevState);
@@ -38,6 +39,7 @@ export default function Header({
       setUser(null);
       setPanelStatus(PANEL_STATUS.SIGN_IN);
       setCart(null);
+      setIsMerged(false);
     }
   };
 
@@ -56,7 +58,8 @@ export default function Header({
             panelStatus === PANEL_STATUS.SIGN_IN ||
             panelStatus === PANEL_STATUS.SIGN_UP ||
             panelStatus === PANEL_STATUS.UPDATE_PASSWORD || 
-            panelStatus === PANEL_STATUS.LINK_SENT
+            panelStatus === PANEL_STATUS.LINK_SENT || 
+            !user
           ) {
             signInHandler();
           } else {
@@ -67,9 +70,13 @@ export default function Header({
         {panelStatus === PANEL_STATUS.SIGN_IN ||
         panelStatus === PANEL_STATUS.SIGN_UP ||
         panelStatus === PANEL_STATUS.UPDATE_PASSWORD || 
-        panelStatus === PANEL_STATUS.LINK_SENT
+        panelStatus === PANEL_STATUS.LINK_SENT || 
+        user === null
           ? "Sign In"
           : "Sign Out"}
+      </Button>
+      <Button onClick={() => setPanelStatus(PANEL_STATUS.MAIN_PAGE)}>
+        Main Page
       </Button>
       <input className="searchBox" type="text" placeholder="Search"></input>
     </div>

@@ -351,15 +351,59 @@ app.get("/getCart/:id", async (req, res) => {
     cart[cartData["product_id"]] = cartData["amount"];
   }
   console.log(`cart to return to frontend is ${JSON.stringify(cart)}`);
-  res.json({
+  res.status(200).json({
     status: "succeed",
-    cart: cart,
+    cartInfo: cart,
   });
+});
+
+// PUT mergeCartAmount update amount
+app.put("/mergeCartAmount", async (req, res) => {
+  console.log(req.body);
+  if (
+    !(req.body && req.body.user_id && req.body.product_id && req.body.amount)
+  ) {
+    console.log("exit here ");
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const newAmount = req.body.amount;
+
+  const cartProductFromDB = await Cart.findOne({
+    user_id: req.body.user_id,
+    product_id: req.body.product_id,
+  }).exec();
+
+  const { modifiedCount } = await cartProductFromDB.updateOne({
+    amount: newAmount,
+  });
+
+  if (modifiedCount) {
+    res.status(200).json({
+      message: "cart product modified by 1 succeed",
+      status: "succeed",
+    });
+    return;
+  } else {
+    res.status(504).json({
+      message: "Internal Server error",
+      status: "failed",
+    });
+  }
 });
 
 // 11 POST add cart product
 app.post("/addCartProduct", async (req, res) => {
-  if (!req.body) {
+  console.log(req.body);
+  if (!(req.body && 
+    req.body.product_id && 
+    req.body.product_name && 
+    req.body.amount && 
+    req.body.user_id)) {
     res.status(404).json({
       error: "failed",
       message: "Input is not valid",
@@ -371,9 +415,12 @@ app.post("/addCartProduct", async (req, res) => {
     user_id: req.body.user_id,
     product_id: req.body.product_id,
   }).exec();
-
+  const user_id = req.body.user_id;
+  const product_id = req.body.product_id;
   if (cartProductFromDB !== null) {
-    console.log(400);
+    console.log(
+      `Cart product with user_id ${user_id} and product_id ${product_id} already exists!`
+    );
     res.status(400).json({
       error: "failed",
       message: "Cart product already exists! modify amount instead!",
@@ -510,9 +557,11 @@ app.post("/createPromocode", async (req, res) => {
   });
 });
 
-// GET discount 
-app.get("/getPromocode/:promocode", async(req, res) => {
-  const promocodeFromDB = await Promocode.findOne({ promocode: req.params.promocode.slice(1) });
+// GET discount
+app.get("/getPromocode/:promocode", async (req, res) => {
+  const promocodeFromDB = await Promocode.findOne({
+    promocode: req.params.promocode.slice(1),
+  });
   if (promocodeFromDB === null) {
     console.log("code does not exist");
     res.json({
@@ -527,7 +576,7 @@ app.get("/getPromocode/:promocode", async(req, res) => {
       discount: promocodeFromDB.discount,
     });
   }
-})
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
