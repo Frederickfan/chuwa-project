@@ -107,14 +107,14 @@ export default function ProductsController({
           },
         ]}
       />
-      {user.isAdmin ? (
+      {user && user.isAdmin ? (
         <Button onClick={() => setPanelStatus(PANEL_STATUS.CREATE_PRODUCT)}>
           Add Product
         </Button>
       ) : (
         <></>
       )}
-      {user.isAdmin ? (
+      {user && user.isAdmin ? (
         <>
           <Button onClick={showModal}>Add Promotion Code</Button>
           <Modal

@@ -9,7 +9,10 @@ export default function Authentication({
       visible, 
       setVisible, 
       panelStatus, 
-      setPanelStatus 
+      setPanelStatus,
+      cart, 
+      setIsMerged, 
+      setCart, 
   }) {
 
     const titleHandler = (panelStatus) => {
@@ -38,6 +41,9 @@ export default function Authentication({
         onCancel={() => setVisible(false)}
       >
         <MyForm 
+        cart={cart}
+        setCart={setCart}
+        setIsMerged={setIsMerged}
           user={user} 
           setUser={setUser} 
           panelStatus={panelStatus} 

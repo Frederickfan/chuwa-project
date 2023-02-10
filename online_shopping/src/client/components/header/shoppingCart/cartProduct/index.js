@@ -18,35 +18,42 @@ export default function CartProduct({
     
 
 
-  console.log(`cart entry is ${cartEntry}`);
-  console.log(`cart entry id is ${cartEntry[0]}`);
   const productData = products.find((product) => product.id === cartEntry[0]);
   const product = productData ? productData : {};
   const quantity = product.quantity;
   const id = product.id;
   const name = product.name;
   const currentUser = user ? user : {};
-  const user_id = user.id;
+  const user_id = user? user.id : null;
 
   const removeHandler = async(user_id, product_id) => {
-    const response = await fetch(
-        "/deleteCartProduct",
-        ajaxConfigHelper(
-          {
-            user_id: user_id,
-            product_id: product_id,
-          },
-          "DELETE"
-        )
-      );
-
-      const { message, status } = await response.json();
-      setCart(cart => {
-        return {
-            ...cart,
-            [product_id]: String(0),
-        };
-    })
+    if (!user_id) {
+        setCart(cart => {
+            return {
+                ...cart,
+                [product_id]: String(0),
+            };
+        })
+    } else {
+        const response = await fetch(
+            "/deleteCartProduct",
+            ajaxConfigHelper(
+              {
+                user_id: user_id,
+                product_id: product_id,
+              },
+              "DELETE"
+            )
+          );
+    
+          const { message, status } = await response.json();
+          setCart(cart => {
+            return {
+                ...cart,
+                [product_id]: String(0),
+            };
+        })
+    }
   }
 
 

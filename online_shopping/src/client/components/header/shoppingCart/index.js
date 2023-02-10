@@ -13,7 +13,6 @@ const ShoppingCart = ({ user, cart, setCart, products }) => {
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState("0");
 
-  console.log(cart);
   let totalCount = 0;
   let subTotal = 0;
   const cartData = cart === null ? {} : cart;
