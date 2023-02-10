@@ -17,6 +17,7 @@ export default function Header({
 }) {
   const signInHandler = () => {
     setVisible((prevState) => !prevState);
+    setPanelStatus(PANEL_STATUS.SIGN_IN);
   };
 
   const signOutHandler = async () => {
@@ -54,7 +55,8 @@ export default function Header({
           if (
             panelStatus === PANEL_STATUS.SIGN_IN ||
             panelStatus === PANEL_STATUS.SIGN_UP ||
-            panelStatus === PANEL_STATUS.UPDATE_PASSWORD
+            panelStatus === PANEL_STATUS.UPDATE_PASSWORD || 
+            panelStatus === PANEL_STATUS.LINK_SENT
           ) {
             signInHandler();
           } else {
@@ -64,7 +66,8 @@ export default function Header({
       >
         {panelStatus === PANEL_STATUS.SIGN_IN ||
         panelStatus === PANEL_STATUS.SIGN_UP ||
-        panelStatus === PANEL_STATUS.UPDATE_PASSWORD
+        panelStatus === PANEL_STATUS.UPDATE_PASSWORD || 
+        panelStatus === PANEL_STATUS.LINK_SENT
           ? "Sign In"
           : "Sign Out"}
       </Button>

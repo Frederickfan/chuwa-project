@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import "./index.css";
 import { ajaxConfigHelper } from "../../../helper";
 import PlusMinusControl from "./plus_minus_controller";
+import { useErrorHandler } from "react-error-boundary";
 const { Meta } = Card;
 const { v4: uuidv4 } = require("uuid");
 
@@ -25,29 +26,42 @@ export default function ProductCard({
   setProducts,
   cart,
   setCart,
-  setDetailId, 
+  setDetailId,
   setIsOnDetailPage,
 }) {
   const [visible, setVisible] = React.useState(false);
+  const handleError = useErrorHandler();
+
+
   // delete below
   const showModal = () => {
     setVisible(true);
   };
 
   const handleOk = async () => {
-    setVisible(false);
-    // Perform the delete operation here
-    const deleteResponse = await fetch(
-      "/delProduct",
-      ajaxConfigHelper({ id }, "DELETE")
-    );
-    const { message, status } = await deleteResponse.json();
-    const updatedProducts = await fetch("/getAllProducts");
-    const { products } = await updatedProducts.json();
-    
-    if (status === "succeed") {
-      setProducts(products);
-      setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+    try {
+      if (!cart) return;
+      console.log(Number(cart[id]));
+      if (Number(cart[id]) >= 1) {
+        throw new Error("Remove items from cart before delete prodcut!");
+      } else {
+        setVisible(false);
+        // Perform the delete operation here
+        const deleteResponse = await fetch(
+          "/delProduct",
+          ajaxConfigHelper({ id }, "DELETE")
+        );
+        const { message, status } = await deleteResponse.json();
+        const updatedProducts = await fetch("/getAllProducts");
+        const { products } = await updatedProducts.json();
+
+        if (status === "succeed") {
+          setProducts(products);
+          setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+        }
+      }
+    } catch (error) {
+      handleError(error);
     }
   };
 
@@ -82,20 +96,29 @@ export default function ProductCard({
     <div>
       <div className="card">
         <div className="card_image">
-          <img src={imgUrl} alt={name} onClick={() => {
-            console.log(`set detail id to be ${id} and re-render`);
-            setPanelStatus(PANEL_STATUS.PRODUCT_DETAIL);
-            setDetailId(id);
-            setIsOnDetailPage(true);
-        }} />
+          <img
+            src={imgUrl}
+            alt={name}
+            onClick={() => {
+              console.log(`set detail id to be ${id} and re-render`);
+              setPanelStatus(PANEL_STATUS.PRODUCT_DETAIL);
+              setDetailId(id);
+              setIsOnDetailPage(true);
+            }}
+          />
         </div>
         <div className="card_info">
           <h4>{name}</h4>
-          {quantity === "0" ? <div style={{color: "red", border: "1px solid red"}}>Out of Stock</div> : <></>}
+          {quantity === "0" ? (
+            <div style={{ color: "red", border: "1px solid red" }}>
+              Out of Stock
+            </div>
+          ) : (
+            <></>
+          )}
           <h4>${Number(price).toFixed(2)}</h4>
 
-          {cart && Number(cart[id]) > 0
-          ? (
+          {cart && Number(cart[id]) > 0 ? (
             <PlusMinusControl
               user_id={user.id}
               product_id={id}
@@ -103,7 +126,9 @@ export default function ProductCard({
               setCart={setCart}
             ></PlusMinusControl>
           ) : (
-            <Button disabled={quantity === "0"} onClick={addHandler}>Add</Button>
+            <Button disabled={quantity === "0"} onClick={addHandler}>
+              Add
+            </Button>
           )}
 
           {user.isAdmin ? (

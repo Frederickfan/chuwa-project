@@ -1,6 +1,7 @@
 import ProductList from "../productList";
 import Pagination from "../pagination";
 import { useState } from "react";
+import "./index.css";
 
 export default function ProductsGallary({
     user, 
@@ -24,7 +25,7 @@ export default function ProductsGallary({
 
   return (
     <>
-      <h1>Products Gallary</h1>
+    <h2>Products</h2>
       <ProductList
         detailId={detailId}
         setDetailId={setDetailId}
