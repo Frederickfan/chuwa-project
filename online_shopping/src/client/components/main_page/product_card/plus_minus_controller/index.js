@@ -2,26 +2,41 @@ import React from "react";
 import { Button } from "antd";
 import { ajaxConfigHelper } from "../../../../helper";
 
-const PlusMinusControl = ({ 
-  cart, 
-  setCart, 
-  user_id, 
-  product_id 
-}) => {
+const PlusMinusControl = ({ ip, cart, setCart, product_id }) => {
   cart = cart ? cart : {};
-  const addHandler = async (user_id, product_id) => {
-    const response = await fetch(
-      "/modCartAmount",
-      ajaxConfigHelper(
-        {
-          user_id: user_id,
-          product_id: product_id,
-          type: "+",
-        },
-        "PUT"
-      )
-    );
-    const { message, status } = await response.json();
+  const addHandler = async (product_id) => {
+    const token = window.localStorage.getItem("token");
+
+    if (token) {
+      const response = await fetch(
+        "/modCartAmount",
+        ajaxConfigHelper(
+          {
+            product_id: product_id,
+            type: "+",
+          },
+          "PUT",
+          window.localStorage.getItem("token")
+        )
+      );
+      const { message, status } = await response.json();
+      console.log(message);
+    } else {
+      const response = await fetch(
+        "/modAnonymousCartAmount",
+        ajaxConfigHelper(
+          {
+            ip: ip,
+            product_id: product_id,
+            type: "+",
+          },
+          "PUT"
+        )
+      );
+      const { message, status } = await response.json();
+      console.log(message);
+    }
+
     setCart((cart) => {
       return {
         ...cart,
@@ -29,20 +44,40 @@ const PlusMinusControl = ({
       };
     });
   };
-  const minusHandler = async (user_id, product_id) => {
+  const minusHandler = async (product_id) => {
+    const token = window.localStorage.getItem("token");
+
     if (Number(cart[product_id]) > 1) {
-      const response = await fetch(
-        "/modCartAmount",
-        ajaxConfigHelper(
-          {
-            user_id: user_id,
-            product_id: product_id,
-            type: "-",
-          },
-          "PUT"
-        )
-      );
-      const { message, status } = await response.json();
+      if (token) {
+        const response = await fetch(
+          "/modCartAmount",
+          ajaxConfigHelper(
+            {
+              product_id: product_id,
+              type: "-",
+            },
+            "PUT",
+            window.localStorage.getItem("token")
+          )
+        );
+        const { message, status } = await response.json();
+        console.log(message);
+      } else {
+        const response = await fetch(
+          "/modAnonymousCartAmount",
+          ajaxConfigHelper(
+            {
+              ip: ip,
+              product_id: product_id,
+              type: "-",
+            },
+            "PUT"
+          )
+        );
+        const { message, status } = await response.json();
+        console.log(message);
+      }
+
       setCart((cart) => {
         return {
           ...cart,
@@ -50,34 +85,49 @@ const PlusMinusControl = ({
         };
       });
     } else {
-      const response = await fetch(
-        "/deleteCartProduct",
-        ajaxConfigHelper(
-          {
-            user_id: user_id,
-            product_id: product_id,
-          },
-          "DELETE"
-        )
-      );
+      if (token) {
+        const response = await fetch(
+          "/deleteCartProduct",
+          ajaxConfigHelper(
+            {
+              product_id: product_id,
+            },
+            "DELETE",
+            window.localStorage.getItem("token")
+          )
+        );
 
-      const { message, status } = await response.json();
-      setCart(cart => {
+        const { message, status } = await response.json();
+        console.log(message);
+      } else {
+        const response = await fetch(
+          "/deleteAnonymousCartProduct",
+          ajaxConfigHelper(
+            {
+              ip: ip,
+              product_id: product_id,
+            },
+            "DELETE"
+          )
+        );
+
+        const { message, status } = await response.json();
+        console.log(message);
+      }
+      setCart((cart) => {
         return {
-            ...cart,
-            [product_id]: String(0),
+          ...cart,
+          [product_id]: String(0),
         };
-    })
+      });
     }
   };
 
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
-      <Button onClick={() => minusHandler(user_id, product_id)}>
-        -
-      </Button>
+      <Button onClick={() => minusHandler(product_id)}>-</Button>
       <div style={{ margin: "0 10px" }}>{cart[product_id]}</div>
-      <Button onClick={() => addHandler(user_id, product_id)}>+</Button>
+      <Button onClick={() => addHandler(product_id)}>+</Button>
     </div>
   );
 };

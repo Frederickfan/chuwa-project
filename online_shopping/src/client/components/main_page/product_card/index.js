@@ -8,13 +8,14 @@ import { PANEL_STATUS } from "../../constants";
 import React from "react";
 import { useState, useEffect } from "react";
 import "./index.css";
-import { ajaxConfigHelper } from "../../../helper";
+import { ajaxConfigHelper, getUserIP } from "../../../helper";
 import PlusMinusControl from "./plus_minus_controller";
 import { useErrorHandler } from "react-error-boundary";
 const { Meta } = Card;
 const { v4: uuidv4 } = require("uuid");
 
 export default function ProductCard({
+  ip,
   user,
   name,
   quantity,
@@ -47,7 +48,11 @@ export default function ProductCard({
         // Perform the delete operation here
         const deleteResponse = await fetch(
           "/delProduct",
-          ajaxConfigHelper({ id }, "DELETE")
+          ajaxConfigHelper(
+            { id },
+            "DELETE",
+            window.localStorage.getItem("token")
+          )
         );
         const { message, status } = await deleteResponse.json();
         const updatedProducts = await fetch("/getAllProducts");
@@ -68,7 +73,7 @@ export default function ProductCard({
   };
 
   const addHandler = async () => {
-    if (user) {
+    if (window.localStorage.getItem("token")) {
       const response = await fetch(
         "/addCartProduct",
         ajaxConfigHelper(
@@ -77,12 +82,25 @@ export default function ProductCard({
             product_id: id,
             product_name: name,
             amount: 1,
-            user_id: user.id,
+          },
+          "POST",
+          window.localStorage.getItem("token")
+        )
+      );
+      const { message, status } = await response.json();
+    } else {
+      const response = await fetch(
+        "/addAnonymousCartProduct",
+        ajaxConfigHelper(
+          {
+            ip: ip,
+            product_id: id,
+            product_name: name,
+            amount: 1,
           },
           "POST"
         )
       );
-      const { message, status } = await response.json();
     }
 
     setCart((cart) => {
@@ -120,6 +138,7 @@ export default function ProductCard({
 
           {cart && Number(cart[id]) > 0 ? (
             <PlusMinusControl
+              ip={ip}
               user_id={user ? user.id : null}
               product_id={id}
               cart={cart}
@@ -148,7 +167,11 @@ export default function ProductCard({
             <Button
               type="danger"
               onClick={showModal}
-              style={{ border: "1px solid red" }}
+              style={{
+                border: "1px solid red",
+                color: "red",
+                fontWeight: "bold",
+              }}
             >
               Delete
             </Button>

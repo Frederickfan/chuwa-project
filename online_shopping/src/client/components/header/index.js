@@ -28,7 +28,8 @@ export default function Header({
         {
           user: user,
         },
-        "PUT"
+        "PUT", 
+        window.localStorage.getItem("token")
       )
     );
     const { message, status } = await response.json();
@@ -36,6 +37,7 @@ export default function Header({
 
     if (status === "200") {
       alert(`Status: ${message}`);
+      window.localStorage.removeItem("token");
       setUser(null);
       setPanelStatus(PANEL_STATUS.SIGN_IN);
       setCart(null);
@@ -45,9 +47,9 @@ export default function Header({
 
   return (
     <div className="header-wrapper">
-      <ShoppingCart 
+      <ShoppingCart
         user={user}
-        cart={cart} 
+        cart={cart}
         setCart={setCart}
         products={products}
       ></ShoppingCart>
@@ -57,8 +59,8 @@ export default function Header({
           if (
             panelStatus === PANEL_STATUS.SIGN_IN ||
             panelStatus === PANEL_STATUS.SIGN_UP ||
-            panelStatus === PANEL_STATUS.UPDATE_PASSWORD || 
-            panelStatus === PANEL_STATUS.LINK_SENT || 
+            panelStatus === PANEL_STATUS.UPDATE_PASSWORD ||
+            panelStatus === PANEL_STATUS.LINK_SENT ||
             !user
           ) {
             signInHandler();
@@ -69,8 +71,8 @@ export default function Header({
       >
         {panelStatus === PANEL_STATUS.SIGN_IN ||
         panelStatus === PANEL_STATUS.SIGN_UP ||
-        panelStatus === PANEL_STATUS.UPDATE_PASSWORD || 
-        panelStatus === PANEL_STATUS.LINK_SENT || 
+        panelStatus === PANEL_STATUS.UPDATE_PASSWORD ||
+        panelStatus === PANEL_STATUS.LINK_SENT ||
         user === null
           ? "Sign In"
           : "Sign Out"}

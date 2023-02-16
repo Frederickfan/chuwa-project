@@ -1,6 +1,11 @@
 .header-wrapper {
   display: flex;
   flex-direction: row-reverse;
+  background: #111827;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 64px;
+  gap: 12px;
 }
 
 .searchBox {
@@ -14,4 +19,3 @@
   height: 30px;
   padding-left: 25px;
 }
-

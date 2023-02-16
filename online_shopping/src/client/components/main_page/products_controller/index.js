@@ -2,6 +2,7 @@ import { Select, Button, message, Modal, Input, Form } from "antd";
 import { PANEL_STATUS } from "../../constants";
 import { useState } from "react";
 import { ajaxConfigHelper } from "../../../helper";
+import "./index.css";
 
 export default function ProductsController({
   user,
@@ -40,7 +41,8 @@ export default function ProductsController({
           promocode: promocode,
           discount: discount,
         },
-        "POST"
+        "POST", 
+        window.localStorage.getItem("token")
       )
     );
     const { status, code } = await response.json();
@@ -89,7 +91,11 @@ export default function ProductsController({
           label: defaultLabelHandler(sortStatus),
         }}
         style={{
-          width: 120,
+          fontFamily: "Inter",
+          fontStyle: "normal",
+          fontWeight: 600,
+          fontSize: "14px",
+          lineHeight: "137.5%",
         }}
         onChange={handleChange}
         options={[
@@ -108,7 +114,15 @@ export default function ProductsController({
         ]}
       />
       {user && user.isAdmin ? (
-        <Button onClick={() => setPanelStatus(PANEL_STATUS.CREATE_PRODUCT)}>
+        <Button
+          style={{
+            borderRadius: "4px",
+            backgroundColor: "#5048E5",
+            color: "white",
+            fontWeight: "bold",
+          }}
+          onClick={() => setPanelStatus(PANEL_STATUS.CREATE_PRODUCT)}
+        >
           Add Product
         </Button>
       ) : (
@@ -116,7 +130,17 @@ export default function ProductsController({
       )}
       {user && user.isAdmin ? (
         <>
-          <Button onClick={showModal}>Add Promotion Code</Button>
+          <Button
+            style={{
+              borderRadius: "4px",
+              backgroundColor: "#5048E5",
+              color: "white",
+              fontWeight: "bold",
+            }}
+            onClick={showModal}
+          >
+            Add Promotion Code
+          </Button>
           <Modal
             title="Add promotion code to database"
             open={open}

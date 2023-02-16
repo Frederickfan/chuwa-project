@@ -14,7 +14,7 @@ export default function AuthenticationForm({
   setPanelStatus,
   cart,
   setCart,
-  setIsMerged
+  setIsMerged,
 }) {
   const [form] = Form.useForm();
   const [email, setEmail] = useState(
@@ -50,7 +50,7 @@ export default function AuthenticationForm({
       }
     };
 
-    const addCartDb = async (product_id, user_id, amount) => {
+    const addCartDb = async (product_id, amount) => {
       const productsData = JSON.parse(window.localStorage.getItem("products"));
       const product = productsData.find((product) => product.id === product_id);
       const response = await fetch(
@@ -61,9 +61,9 @@ export default function AuthenticationForm({
             product_id: product_id,
             product_name: product.name,
             amount: amount,
-            user_id: user_id,
           },
-          "POST"
+          "POST",
+          window.localStorage.getItem("token")
         )
       );
 
@@ -126,8 +126,11 @@ export default function AuthenticationForm({
   };
 
   const signInHandler = async (email, password) => {
-    async function getCart(user) {
-      const response = await fetch(`/getCart/:${user.id}`);
+    async function getCart(token) {
+      const response = await fetch(
+        `/getCart`,
+        ajaxConfigHelper({}, "GET", token)
+      );
       const { status, cartInfo } = await response.json();
 
       if (status === "succeed") {
@@ -148,8 +151,8 @@ export default function AuthenticationForm({
       )
     );
 
-    const { authenMessage, status, customer } = await response.json();
-
+    const { authenMessage, status, customer, token } = await response.json();
+        console.log(`token after signin ${token}`);
     if (status === "no_account") {
       message.error(
         "Account does not exist! Check your email or sign up an account."
@@ -166,7 +169,7 @@ export default function AuthenticationForm({
       let localCartData = JSON.parse(window.localStorage.getItem("cart"));
       localCartData = localCartData ? localCartData : {};
       let newCart = null;
-      getCart(customer).then((userCart) => {
+      getCart(token).then((userCart) => {
         console.log(
           `user cart from getCart FUNCTION: ${JSON.stringify(userCart)}`
         );
@@ -184,6 +187,7 @@ export default function AuthenticationForm({
       });
 
       console.log(`newly MERGED CART IS ${JSON.stringify(newCart)}`);
+      window.localStorage.setItem("token", token);
       setCart(newCart);
       setUser(customer);
       setPanelStatus(PANEL_STATUS.MAIN_PAGE);

@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 
 
 export default function ProductList({
+  ip,
   user,
   panelStatus,
   setPanelStatus,
@@ -22,6 +23,7 @@ export default function ProductList({
       {products.map((product, index) => {
         return (
           <ProductCard
+            ip={ip}
             detailId={detailId}
             setDetailId={setDetailId}
             cart={cart}

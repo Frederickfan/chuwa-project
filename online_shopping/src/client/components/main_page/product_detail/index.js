@@ -40,9 +40,9 @@ export default function ProductDetail({
           product_id: id,
           product_name: name,
           amount: 1,
-          user_id: user.id,
         },
-        "POST"
+        "POST",
+        window.localStorage.getItem("token")
       )
     );
     const { message, status } = await response.json();
@@ -95,18 +95,19 @@ export default function ProductDetail({
       <div className="product_detail_page">
         <img src={currentProduct.imgUrl}></img>
         <div className="product_card">
-          <h4>{currentProduct.category}</h4>
-          <h2>{currentProduct.name}</h2>
+        <h2>Product Name: {currentProduct.name}</h2>
+          <h4>Category: {currentProduct.category}</h4>
 
           <div className="price">
-            <h1>{currentProduct.price}</h1>
+            <h4>price: {currentProduct.price}</h4>
             {currentProduct.quantity === "0" ? (
-              <div style={{ color: "red", border: "1px solid red" }}>
+              <div style={{ color: "red", border: "1px solid red", margin: "10px 50px 30px 0" }}>
                 Out of Stock
               </div>
             ) : (
               <></>
             )}
+            <h4>Product Detail: </h4>
             <div>{currentProduct.detail}</div>
           </div>
 
