@@ -5,6 +5,7 @@ import { PANEL_STATUS } from "../constants";
 import ProductDetail from "./product_detail";
 
 export default function MainPage({
+  ip,
   cart,
   setCart,
   user,
@@ -48,6 +49,7 @@ export default function MainPage({
             setSortStatus={setSortStatus}
           ></ProductsController>
           <ProductsGallary
+            ip={ip}
             detailId={detailId}
             setDetailId={setDetailId}
             cart={cart}

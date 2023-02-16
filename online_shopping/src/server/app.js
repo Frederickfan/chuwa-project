@@ -6,7 +6,7 @@ var logger = require("morgan");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
-
+const jwt = require("jsonwebtoken");
 // connect to database
 const connectToMongoose = require("./database/connect");
 connectToMongoose();
@@ -16,6 +16,7 @@ const { v4: uuidv4 } = require("uuid");
 const Customer = require("./database/customerModel");
 const Product = require("./database/productModel");
 const Cart = require("./database/cartModel");
+const AnonymousCart = require("./database/anonymousCartModel");
 const Promocode = require("./database/promoCodeModel");
 const { appPackageJson } = require("../../config/paths");
 const { connect } = require("http2");
@@ -34,6 +35,27 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 // mock database
+
+const verify = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  console.log(req.headers);
+  console.log(authHeader);
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, "mySecretKey", (err, payload) => {
+      if (err) {
+        console.log("token not valid");
+        return res.status(403).json("Token is not valid!");
+      }
+
+      req.payload = payload;
+      next();
+    });
+  } else {
+    res.status(401).json("You are not authenticated!");
+  }
+};
 
 // 1. (GET) => return all users in the mock database
 app.get("/allCustomers", async (_, res) => {
@@ -143,9 +165,18 @@ app.put("/customerSignIn", async (req, res) => {
   });
 
   if (modifiedCount) {
+    const token = jwt.sign(
+      {
+        email: customerFromDB.email,
+        id: customerFromDB.id,
+      },
+      "mySecretKey"
+    );
+
     res.status("200").json({
       authenMessage: "Successfully logged in!",
       status: "200",
+      token: token,
       customer: {
         id: customerFromDB.id,
         isLoggedIn: customerFromDB.isLoggedIn,
@@ -162,7 +193,7 @@ app.put("/customerSignIn", async (req, res) => {
 });
 
 // 4. PUT customerSignOut
-app.put("/customerSignOut", async (req, res) => {
+app.put("/customerSignOut", verify, async (req, res) => {
   if (!(req.body && req.body.user)) {
     res.status(404).json({
       error: "failed",
@@ -186,8 +217,13 @@ app.put("/customerSignOut", async (req, res) => {
 });
 
 // 5 GET customers
-app.get("/customers/:id", async (req, res) => {
-  const customerFromDB = await Customer.findOne({ id: req.params.id.slice(1) });
+app.get("/getCustomer", verify, async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1]; 
+  console.log(`token is ${token}`);
+  const decoded = jwt.decode(token);
+  console.log(`decoded token is ${JSON.stringify(decoded)}`);
+
+  const customerFromDB = await Customer.findOne({ id: decoded.id });
   if (customerFromDB === null) {
     res.json({
       message: "Not yet authenticated",
@@ -277,7 +313,7 @@ app.get("/getAllProducts", async (_, res) => {
 });
 
 // 8 PUT edit a product with id
-app.put("/editProduct", async (req, res) => {
+app.put("/editProduct", verify, async (req, res) => {
   console.log(req.body);
   if (!req.body) {
     res.status(404).json({
@@ -307,7 +343,7 @@ app.put("/editProduct", async (req, res) => {
 });
 
 // 9 DELETE a product with id.
-app.delete("/delProduct", async (req, res) => {
+app.delete("/delProduct", verify, async (req, res) => {
   if (!(req.body && req.body.id)) {
     res.status(404).json({
       error: "failed",
@@ -332,7 +368,9 @@ app.delete("/delProduct", async (req, res) => {
 });
 
 // 10 GET cart with user_id
-app.get("/getCart/:id", async (req, res) => {
+app.get("/getCart", verify, async (req, res) => {
+  console.log(req.headers);
+  
   if (!req.body) {
     res.status(404).json({
       error: "failed",
@@ -340,9 +378,12 @@ app.get("/getCart/:id", async (req, res) => {
     });
     return;
   }
+  const token = req.headers.authorization.split(" ")[1]; 
+  console.log(`token is ${token}`);
+  const decoded = jwt.decode(token);
+  console.log(`decoded token is ${JSON.stringify(decoded)}`);
 
-  console.log(req.params);
-  const user_id = req.params.id.slice(1);
+  const user_id = decoded.id;
   const cartFromDB = await Cart.find({ user_id: user_id });
   console.log(`cart data from db ${cartFromDB}`);
 
@@ -396,14 +437,17 @@ app.put("/mergeCartAmount", async (req, res) => {
   }
 });
 
-// 11 POST add cart product
-app.post("/addCartProduct", async (req, res) => {
+app.post("/addAnonymousCartProduct", async(req, res) => {
   console.log(req.body);
-  if (!(req.body && 
-    req.body.product_id && 
-    req.body.product_name && 
-    req.body.amount && 
-    req.body.user_id)) {
+  if (
+    !(
+      req.body &&
+      req.body.product_id &&
+      req.body.product_name &&
+      req.body.amount &&
+      req.body.ip
+    )
+  ) {
     res.status(404).json({
       error: "failed",
       message: "Input is not valid",
@@ -411,11 +455,63 @@ app.post("/addCartProduct", async (req, res) => {
     return;
   }
 
-  const cartProductFromDB = await Cart.findOne({
-    user_id: req.body.user_id,
+  const anonymousCartProductFromDB = await AnonymousCart.findOne({
+    ip: req.body.ip,
     product_id: req.body.product_id,
   }).exec();
-  const user_id = req.body.user_id;
+  const ip = req.body.ip;
+  const product_id = req.body.product_id;
+  if (anonymousCartProductFromDB !== null) {
+    console.log(
+      `AnonymousCart product with ip ${ip} and product_id ${product_id} already exists!`
+    );
+    res.status(400).json({
+      error: "failed",
+      message: "AnonymousCart product already exists! modify amount instead!",
+    });
+    return;
+  }
+
+  const anonymousCartProduct = new AnonymousCart({
+    ...req.body,
+  });
+
+  const newAnonymousCartProduct = await anonymousCartProduct.save();
+
+  if (newAnonymousCartProduct === anonymousCartProduct) {
+    res.json({
+      message: "New product in anonymous cart created successfully",
+      status: "201",
+    });
+    return;
+  }
+})
+
+
+
+// 11 POST add cart product
+app.post("/addCartProduct", verify, async (req, res) => {
+  console.log(req.body);
+  if (!(req.body && req.body.product_id &&
+      req.body.product_name &&
+      req.body.amount)
+  ) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const token = req.headers.authorization.split(" ")[1]; 
+  const decoded = jwt.decode(token);
+  const user_id = decoded.id;
+
+  const cartProductFromDB = await Cart.findOne({
+    user_id: user_id,
+    product_id: req.body.product_id,
+  }).exec();
+
   const product_id = req.body.product_id;
   if (cartProductFromDB !== null) {
     console.log(
@@ -430,6 +526,7 @@ app.post("/addCartProduct", async (req, res) => {
 
   const cartProduct = new Cart({
     ...req.body,
+    user_id
   });
 
   const newCartProduct = await cartProduct.save();
@@ -443,9 +540,9 @@ app.post("/addCartProduct", async (req, res) => {
   }
 });
 
-// 12 add or minus the amount in cart
-app.put("/modCartAmount", async (req, res) => {
-  if (!(req.body && req.body.user_id && req.body.product_id && req.body.type)) {
+app.put("/modAnonymousCartAmount", async (req, res) => {
+  console.log(req.body);
+  if (!(req.body && req.body.product_id && req.body.type && req.body.ip)) {
     res.status(404).json({
       error: "failed",
       message: "Input is not valid",
@@ -453,8 +550,53 @@ app.put("/modCartAmount", async (req, res) => {
     return;
   }
 
+  const anonymousCartProductFromDB = await AnonymousCart.findOne({
+    ip: req.body.ip,
+    product_id: req.body.product_id,
+  });
+
+  console.log(
+    `The product amount waiting to be added is the cart product ${anonymousCartProductFromDB}`
+  );
+  const newAmount =
+    req.body.type === "+"
+      ? Number(anonymousCartProductFromDB.amount) + 1
+      : Number(anonymousCartProductFromDB.amount) - 1;
+  const { modifiedCount } = await anonymousCartProductFromDB.updateOne({
+    amount: newAmount,
+  });
+  if (modifiedCount) {
+    res.status(200).json({
+      message: "Anonymous cart product modified by 1 succeed",
+      status: "succeed",
+    });
+    return;
+  } else {
+    res.status(504).json({
+      message: "Internal Server error",
+      status: "failed",
+    });
+  }
+});
+
+
+// 12 add or minus the amount in cart
+app.put("/modCartAmount", verify, async (req, res) => {
+  console.log(req.body);
+  if (!(req.body && req.body.product_id && req.body.type)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const token = req.headers.authorization.split(" ")[1];
+  const decoded = jwt.decode(token)
+  console.log(`decoded data is ${JSON.stringify(decoded)}`);
+
   const cartProductFromDB = await Cart.findOne({
-    user_id: req.body.user_id,
+    user_id: decoded.id,
     product_id: req.body.product_id,
   });
 
@@ -482,9 +624,8 @@ app.put("/modCartAmount", async (req, res) => {
   }
 });
 
-// DELETE the cart product
-app.delete("/deleteCartProduct", async (req, res) => {
-  if (!(req.body && req.body.user_id && req.body.product_id)) {
+app.delete("/deleteAnonymousCartProduct", async (req, res) => {
+  if (!(req.body && req.body.product_id && req.body.ip)) {
     res.status(404).json({
       error: "failed",
       message: "Input is not valid",
@@ -492,8 +633,41 @@ app.delete("/deleteCartProduct", async (req, res) => {
     return;
   }
 
+
+  const { deletedCount } = await AnonymousCart.deleteOne({
+    ip: req.body.ip,
+    product_id: req.body.product_id,
+  });
+  if (deletedCount) {
+    res.status(200).json({
+      message: "delete succeed",
+      status: "succeed",
+    });
+  } else {
+    res.status(404).json({
+      message: "delete failed",
+      status: "failed",
+    });
+  }
+});
+
+// DELETE the cart product
+app.delete("/deleteCartProduct", verify, async (req, res) => {
+  if (!(req.body && req.body.product_id)) {
+    res.status(404).json({
+      error: "failed",
+      message: "Input is not valid",
+    });
+    return;
+  }
+
+  const token = req.headers.authorization.split(" ")[1];
+  const decoded = jwt.decode(token)
+  console.log(`decoded data is ${JSON.stringify(decoded)}`);
+  const user_id = decoded.id;
+
   const { deletedCount } = await Cart.deleteOne({
-    user_id: req.body.user_id,
+    user_id: user_id,
     product_id: req.body.product_id,
   });
   if (deletedCount) {
@@ -510,7 +684,7 @@ app.delete("/deleteCartProduct", async (req, res) => {
 });
 
 //  CREATE new promotion code
-app.post("/createPromocode", async (req, res) => {
+app.post("/createPromocode", verify, async (req, res) => {
   if (!(req.body && req.body.promocode && req.body.discount)) {
     res.status(404).json({
       error: "failed",

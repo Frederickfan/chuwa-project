@@ -1,6 +1,7 @@
 import { Form, Input, InputNumber, Select, Button, Image } from "antd";
 import { PANEL_STATUS } from "../../constants";
 import { useState } from "react";
+import "./index.css";
 import { ajaxConfigHelper } from "../../../helper";
 const { v4: uuidv4 } = require("uuid");
 const { TextArea } = Input;
@@ -58,10 +59,11 @@ const ProductControlForm = ({
 
     const editResponse = await fetch(
       "/editProduct",
-      ajaxConfigHelper(product, "PUT")
+      ajaxConfigHelper(product, "PUT", window.localStorage.getItem("token"))
     );
     const { message, editStatus } = await editResponse.json();
-    const productsResponse = await fetch("/getAllProducts");
+    const productsResponse = await fetch("/getAllProducts"
+    );
     const { productsStatus, products } = await productsResponse.json();
 
     if (editStatus === "succeed") {
@@ -87,9 +89,9 @@ const ProductControlForm = ({
   return (
     <>
       {panelStatus === PANEL_STATUS.CREATE_PRODUCT ? (
-        <h1>Create Product</h1>
+        <h1 className="create-edit-box">Create Product</h1>
       ) : (
-        <h1>Edit Product</h1>
+        <h1 className="create-edit-box">Edit Product</h1>
       )}
       <Form
         initialValues={
@@ -110,6 +112,7 @@ const ProductControlForm = ({
         }}
         layout="horizontal"
         style={{
+          
           maxWidth: 600,
         }}
       >

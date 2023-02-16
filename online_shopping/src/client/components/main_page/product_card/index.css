@@ -2,7 +2,7 @@
 
 .card {
     cursor: pointer;
-    background: rgb(231, 231, 231);
+    background: #FFFFFF;
     border-radius: 20px;
     margin: 0.3rem 0.3rem 0.5rem 0.3rem;
     overflow: hidden;
@@ -19,7 +19,8 @@
 
 .card_image {
     width: 100px;
-    height: 100px;
+    height: 100px; 
+    margin-left: 10px;
 }
 
 .card_image img {

@@ -4,17 +4,18 @@ import { useState } from "react";
 import "./index.css";
 
 export default function ProductsGallary({
-    user, 
-    panelStatus, 
-    setPanelStatus, 
-    products, 
-    setEditId, 
-    setProducts,
-    cart, 
-    setCart,
-    detailId, 
-    setDetailId,
-    setIsOnDetailPage,
+  ip,
+  user,
+  panelStatus,
+  setPanelStatus,
+  products,
+  setEditId,
+  setProducts,
+  cart,
+  setCart,
+  detailId,
+  setDetailId,
+  setIsOnDetailPage,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage, setPostsPerPage] = useState(8);
@@ -25,8 +26,9 @@ export default function ProductsGallary({
 
   return (
     <>
-    <h2>Products</h2>
+      <h2>Products</h2>
       <ProductList
+        ip={ip}
         detailId={detailId}
         setDetailId={setDetailId}
         cart={cart}

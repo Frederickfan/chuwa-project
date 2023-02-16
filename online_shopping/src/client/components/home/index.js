@@ -1,10 +1,11 @@
 import Header from "../header";
 import Authentication from "../authentication";
 import { useState, useEffect, useRef } from "react";
-import { PANEL_STATUS } from "../constants/";
+import { PANEL_STATUS } from "../constants";
 import MainPage from "../main_page";
 import Cart from "../../../server/database/cartModel";
-import { ajaxConfigHelper } from "../../helper";
+import { ajaxConfigHelper, getUserIP } from "../../helper";
+import PreLoader3 from "../loading";
 const { v4: uuidv4 } = require("uuid");
 
 const Home = ({ setHasError }) => {
@@ -26,6 +27,7 @@ const Home = ({ setHasError }) => {
   const [detailId, setDetailId] = useState(null);
   const [isOnDetailPage, setIsOnDetailPage] = useState(false);
   const [isMerged, setIsMerged] = useState(false);
+  const [ip, setIp] = useState("");
 
   const [userUseEffectFinished, setUserUseEffectFinished] = useState(false);
   const [cartUseEffectFinished, setCartUseEffectFinished] = useState(false);
@@ -37,6 +39,9 @@ const Home = ({ setHasError }) => {
   const shouldLogDetailId = useRef(true);
   const shouldLogIsOnDetailPage = useRef(true);
   const shouldLogCart = useRef(true);
+
+
+  
 
   const mergeCart = (localCartData, userCart) => {
     const curUser = JSON.parse(window.localStorage.getItem("user"));
@@ -71,9 +76,9 @@ const Home = ({ setHasError }) => {
             product_id: product_id,
             product_name: product.name,
             amount: amount,
-            user_id: user_id,
           },
-          "POST"
+          "POST",
+          window.localStorage.getItem("token")
         )
       );
 
@@ -114,8 +119,8 @@ const Home = ({ setHasError }) => {
     }
     shouldLogUser.current = false;
 
-    console.log(JSON.parse(window.localStorage.getItem('isMerged')));
-    const localIsMerged = JSON.parse(window.localStorage.getItem('isMerged'));
+    console.log(JSON.parse(window.localStorage.getItem("isMerged")));
+    const localIsMerged = JSON.parse(window.localStorage.getItem("isMerged"));
     if (localIsMerged) {
       setIsMerged(localIsMerged);
     }
@@ -124,10 +129,25 @@ const Home = ({ setHasError }) => {
     const userData = JSON.parse(window.localStorage.getItem("user"));
     console.log(`user after reload: ${JSON.stringify(userData)}`);
 
+    async function getUserIP() {
+      const response = await fetch("https://geolocation-db.com/json/ef83f5c0-a91a-11ed-8af0-2752a81983d6");
+      const data = await response.json();
+    
+      return data;
+    }
+
+    async function fetchIpData() {
+      const ipData = await getUserIP();
+      console.log(ipData.IPv4);
+      setIp(ipData.IPv4);
+      // do something with the IP data here
+    }
+
     async function getUserStatus() {
-      const id = userData ? userData.id : uuidv4();
-      console.log(`check this id in database now: ${id}`);
-      const response = await fetch(`/customers/:${id}`);
+      const response = await fetch(
+        `/getCustomer`,
+        ajaxConfigHelper({}, "GET", window.localStorage.getItem("token"))
+      );
       const { userStatus } = await response.json();
       console.log(userStatus);
 
@@ -147,23 +167,27 @@ const Home = ({ setHasError }) => {
       setUser(userData);
       setPanelStatus(panelStatusData);
     }
-
-    getUserStatus();
+    if (window.localStorage.getItem("token")) {
+      getUserStatus();
+    }
+    setPanelStatus(PANEL_STATUS.MAIN_PAGE);
+    fetchIpData();
+    
     return () => setUserUseEffectFinished(true);
   }, []);
-
 
   useEffect(() => {
     if (!shouldLogCart.current) {
       return;
     }
     shouldLogCart.current = false;
-    const userData = JSON.parse(window.localStorage.getItem("user"));
-    
-    if (!userUseEffectFinished && !user && !userData) return;
 
-    async function getCart(user) {
-      const response = await fetch(`/getCart/:${user.id}`);
+    const token = window.localStorage.getItem("token");
+
+    async function getCart(token) {
+      const response = await fetch(`/getCart`, 
+        ajaxConfigHelper({}, "GET", window.localStorage.getItem("token")),
+      );
       const { status, cartInfo } = await response.json();
 
       if (status === "succeed") {
@@ -176,7 +200,7 @@ const Home = ({ setHasError }) => {
     let localCartData = JSON.parse(window.localStorage.getItem("cart"));
     localCartData = localCartData ? localCartData : {};
 
-    if (!user && !userData) {
+    if (!window.localStorage.getItem("token")) {
       setCart(localCartData);
       return () => {
         setCartUseEffectFinished(true);
@@ -186,15 +210,17 @@ const Home = ({ setHasError }) => {
     //const cartData = JSON.parse(window.localStorage.getItem("cart"));
     let newCart = null;
 
-    getCart(userData).then((userCart) => {
+    getCart(token).then((userCart) => {
       console.log(
         `user cart from getCart FUNCTION: ${JSON.stringify(userCart)}`
       );
 
-      const isMergedData = JSON.parse(window.localStorage.getItem('isMerged'));
+      const isMergedData = JSON.parse(window.localStorage.getItem("isMerged"));
       console.log(`isMergedData is ${isMergedData}`);
 
-      newCart = isMergedData ? localCartData : mergeCart(localCartData, userCart);
+      newCart = isMergedData
+        ? localCartData
+        : mergeCart(localCartData, userCart);
       console.log(`newly MERGED CART IS ${JSON.stringify(newCart)}`);
       setCart(newCart);
 
@@ -207,7 +233,7 @@ const Home = ({ setHasError }) => {
     return () => {
       setCartUseEffectFinished(true);
     };
-  }, [userUseEffectFinished, user]);
+  }, [userUseEffectFinished]);
 
   useEffect(() => {
     if (!shouldLogProducts.current) {
@@ -350,9 +376,9 @@ const Home = ({ setHasError }) => {
       panelStatus === PANEL_STATUS.UPDATE_PASSWORD ||
       panelStatus === PANEL_STATUS.LINK_SENT ? (
         <Authentication
-        cart={cart}
-        setIsMerged={setIsMerged}
-        setCart={setCart}
+          cart={cart}
+          setIsMerged={setIsMerged}
+          setCart={setCart}
           user={user}
           setUser={setUser}
           visible={visible}
@@ -362,6 +388,7 @@ const Home = ({ setHasError }) => {
         ></Authentication>
       ) : (
         <MainPage
+          ip={ip}
           setHasError={setHasError}
           isOnDetailPage={isOnDetailPage}
           setIsOnDetailPage={setIsOnDetailPage}

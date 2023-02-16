@@ -29,7 +29,8 @@ const ShoppingCart = ({ user, cart, setCart, products }) => {
   const total = subTotal - Number(discount) + parseFloat(tax);
 
   const applyCodeHandler = async () => {
-    const response = await fetch(`/getPromocode/:${promoCode}`);
+    const response = await fetch(`/getPromocode/:${promoCode}`
+    );
     const { status, discount } = await response.json();
 
     if (status === "204") {
@@ -47,13 +48,13 @@ const ShoppingCart = ({ user, cart, setCart, products }) => {
       <div className="icon-container">
         <div className="cart-icon">
           <ShoppingCartOutlined
-            style={{ fontSize: "36px" }}
+            style={{ fontSize: "36px", color:"white" }}
             onClick={() => setVisible(true)}
           />
           {totalCount > 0 && <div className="count-icon">{totalCount}</div>}
         </div>
 
-        <div className="price">${subTotal.toFixed(2)}</div>
+        <div className="price" style={{color: "white"}}>${subTotal.toFixed(2)}</div>
       </div>
       <Drawer
         bodyStyle={{}}

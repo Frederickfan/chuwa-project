@@ -15,47 +15,44 @@ export default function CartProduct({
   products,
   cartEntry,
 }) {
-    
-
-
   const productData = products.find((product) => product.id === cartEntry[0]);
   const product = productData ? productData : {};
   const quantity = product.quantity;
   const id = product.id;
   const name = product.name;
   const currentUser = user ? user : {};
-  const user_id = user? user.id : null;
+  const user_id = user ? user.id : null;
 
-  const removeHandler = async(user_id, product_id) => {
+  const removeHandler = async (user_id, product_id) => {
     if (!user_id) {
-        setCart(cart => {
-            return {
-                ...cart,
-                [product_id]: String(0),
-            };
-        })
+      setCart((cart) => {
+        return {
+          ...cart,
+          [product_id]: String(0),
+        };
+      });
     } else {
-        const response = await fetch(
-            "/deleteCartProduct",
-            ajaxConfigHelper(
-              {
-                user_id: user_id,
-                product_id: product_id,
-              },
-              "DELETE"
-            )
-          );
-    
-          const { message, status } = await response.json();
-          setCart(cart => {
-            return {
-                ...cart,
-                [product_id]: String(0),
-            };
-        })
-    }
-  }
+      const response = await fetch(
+        "/deleteCartProduct",
+        ajaxConfigHelper(
+          {
+            user_id: user_id,
+            product_id: product_id,
+          },
+          "DELETE",
+          window.localStorage.getItem("token"),
+        )
+      );
 
+      const { message, status } = await response.json();
+      setCart((cart) => {
+        return {
+          ...cart,
+          [product_id]: String(0),
+        };
+      });
+    }
+  };
 
   return (
     <div className="cart-item">
@@ -77,7 +74,12 @@ export default function CartProduct({
             setCart={setCart}
           ></PlusMinusControl>
 
-          <Button className="remove-button" onClick={() => removeHandler(user_id, id)} >Remove</Button>
+          <Button
+            className="remove-button"
+            onClick={() => removeHandler(user_id, id)}
+          >
+            Remove
+          </Button>
         </div>
       </div>
     </div>
